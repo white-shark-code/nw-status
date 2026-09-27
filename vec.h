@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define VECTOR_INITIAL_CAPACITY 8
 
@@ -70,6 +71,8 @@
     if (v->size == v->capacity) {                                              \
       size_t new_capacity =                                                    \
           v->capacity ? v->capacity * 2 : VECTOR_INITIAL_CAPACITY;             \
+      if (new_capacity > SIZE_MAX / sizeof(T))                                 \
+        return -1;                                                             \
       if (vec_reserve_##FN(v, new_capacity) != 0)                              \
         return -1;                                                             \
     }                                                                          \

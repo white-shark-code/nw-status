@@ -31,6 +31,11 @@ typedef struct {
   uint32_t scope_id;
 } IPv6;
 
+_Static_assert(sizeof("link-local") <= 11, "IPv6 type buffer too small for 'link-local'");
+_Static_assert(sizeof("multicast") <= 11, "IPv6 type buffer too small for 'multicast'");
+_Static_assert(sizeof("ULA") <= 11, "IPv6 type buffer too small for 'ULA'");
+_Static_assert(sizeof("global") <= 11, "IPv6 type buffer too small for 'global'");
+
 VECTOR_DECLARE(char, Char, char)
 VECTOR_DECLARE(Wireless, Wirelesses, wirelesses)
 VECTOR_DECLARE(IPv4, AddressesIPv4, addresses_ipv4)

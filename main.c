@@ -3,6 +3,9 @@
 
 int main(void) {
   FILE *file = read_file(STATIC_PATH_PROC_WIRELES);
+  if (!file) {
+    return 1;
+  }
 
   VecWirelesses *wires = get_all_wire_ifaces(file);
   if (!wires) {

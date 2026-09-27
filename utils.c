@@ -1,5 +1,7 @@
 #include "utils.h"
 #include <stdio.h>
+#include <assert.h>
+#include <stdint.h>
 
 VECTOR_DEFINE(char, Char, char)
 VECTOR_DEFINE(Wireless, Wirelesses, wirelesses)
@@ -12,6 +14,7 @@ VecChar *slice_char(const char *str, size_t len) {
   size_t row_len = strlen(str);
   if (row_len < len)
     return NULL;
+  assert(len <= row_len);
   VecChar *row = vec_init_char_with_capacity(len + 1);
   if (!row)
     return NULL;
@@ -27,7 +30,7 @@ FILE *read_file(const char *path) {
   FILE *f = fopen(path, "r");
   if (!f) {
     perror("Couldn't read the file(/proc/net/wireless)");
-    exit(-1);
+    return NULL;
   }
   return f;
 }
@@ -36,8 +39,11 @@ Wireless get_wire_iface(const char *row) {
   Wireless wire = {0};
   if (!row)
     return wire;
-  sscanf(row, " %63[^:]: %4s %f %f %f", wire.name, wire.status, &wire.link,
+  int parsed = sscanf(row, " %63[^:]: %4s %f %f %f", wire.name, wire.status, &wire.link,
          &wire.level, &wire.noise);
+  if (parsed != 5) {
+    return (Wireless){0};
+  }
   return wire;
 }
 
@@ -45,22 +51,21 @@ VecWirelesses *get_all_wire_ifaces(FILE *file) {
   char *line = NULL;
   size_t capacity = 0;
   ssize_t n_bytes;
+  VecWirelesses *wirelesses = NULL;
+  int ret = -1;
 
   if (getline(&line, &capacity, file) == -1) {
-    free(line);
     perror("Headline is empty /proc/net/wireless");
-    return NULL;
+    goto cleanup;
   };
   if (getline(&line, &capacity, file) == -1) {
-    free(line);
     perror("Headline is empty /proc/net/wireless");
-    return NULL;
+    goto cleanup;
   };
 
-  VecWirelesses *wirelesses = vec_init_wirelesses_with_capacity(3);
+  wirelesses = vec_init_wirelesses_with_capacity(3);
   if (!wirelesses) {
-    free(line);
-    return NULL;
+    goto cleanup;
   }
 
   while ((n_bytes = getline(&line, &capacity, file)) != -1) {
@@ -74,21 +79,24 @@ VecWirelesses *get_all_wire_ifaces(FILE *file) {
     if (wire.name[0] == '\0') {
       vec_free_char(row);
       printf("You don't have wireless interfaces");
-      free(line);
-      vec_free_wirelesses(wirelesses);
-      return NULL;
+      ret = 0;
+      goto cleanup;
     };
     vec_free_char(row);
     if (vec_push_wirelesses(wirelesses, wire)) {
       fprintf(stderr, "Wire can't push inside wirelesses: %s\n", wire.name);
-      free(line);
-      vec_free_wirelesses(wirelesses);
-      return NULL;
+      goto cleanup;
     }
   }
 
-  free(line);
+  ret = 0;
 
+cleanup:
+  free(line);
+  if (ret != 0 && wirelesses) {
+    vec_free_wirelesses(wirelesses);
+    wirelesses = NULL;
+  }
   return wirelesses;
 }
 
@@ -164,6 +172,9 @@ int vec_networks_push(VecNetwork *networks, Network *network) {
 
   if (networks->capacity == networks->size) {
     size_t new_capacity = networks->capacity ? networks->capacity * 2 : 8;
+    if (new_capacity > SIZE_MAX / sizeof(Network)) {
+      return -1;
+    }
     Network *p = realloc(networks->data, new_capacity * sizeof(Network));
     if (!p) {
       return -1;
