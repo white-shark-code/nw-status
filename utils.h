@@ -63,7 +63,7 @@ Wireless get_wire_iface(const char *row);
 VecWirelesses *get_all_wire_ifaces(FILE *file);
 int vec_networks_push(VecNetwork *networks, Network *network);
 VecNetwork *prepair_networks_using_wireless(VecWirelesses *wirelesses);
-ssize_t check_exist_wire(struct ifaddrs *ifa, VecNetwork *networks);
+ssize_t get_index_wire(const char *ifa_name, VecNetwork *networks);
 int get_addr(VecNetwork *networks);
 void vec_networks_json_output(VecNetwork *networks);
 

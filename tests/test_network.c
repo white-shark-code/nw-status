@@ -153,7 +153,7 @@ void test_check_exist_wire_found(void) {
     free(net1);
     
     struct ifaddrs ifa = { .ifa_name = "wlan0" };
-    ssize_t idx = check_exist_wire(&ifa, nets);
+    ssize_t idx = get_index_wire(ifa.ifa_name, nets);
     
     TEST_ASSERT_EQUAL(0, idx);
     vec_networks_free(nets);
@@ -167,7 +167,7 @@ void test_check_exist_wire_not_found(void) {
     free(net1);
     
     struct ifaddrs ifa = { .ifa_name = "eth0" };
-    ssize_t idx = check_exist_wire(&ifa, nets);
+    ssize_t idx = get_index_wire(ifa.ifa_name, nets);
     
     TEST_ASSERT_EQUAL(-1, idx);
     vec_networks_free(nets);
@@ -176,7 +176,7 @@ void test_check_exist_wire_not_found(void) {
 void test_check_exist_wire_empty_networks(void) {
     VecNetwork *nets = vec_networks_init();
     struct ifaddrs ifa = { .ifa_name = "wlan0" };
-    ssize_t idx = check_exist_wire(&ifa, nets);
+    ssize_t idx = get_index_wire(ifa.ifa_name, nets);
     TEST_ASSERT_EQUAL(-1, idx);
     vec_networks_free(nets);
 }

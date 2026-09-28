@@ -369,14 +369,9 @@ VecNetwork *prepair_networks_using_wireless(VecWirelesses *wirelesses) {
   return networks;
 }
 
-ssize_t check_exist_wire(struct ifaddrs *ifa, VecNetwork *networks) {
+ssize_t get_index_wire(const char *ifa_name, VecNetwork *networks) {
   for (size_t i = 0; networks->size > i; i++) {
-    char *wire_name = networks->data[i].wire->name;
-    char *ifa_name = ifa->ifa_name;
-    int ife = strcmp(ifa_name, wire_name);
-    if (ife != 0)
-      continue;
-    else {
+    if (strcmp(ifa_name, networks->data[i].wire->name) == 0) {
       return (ssize_t)i;
     }
   }
@@ -395,7 +390,7 @@ int get_addr(VecNetwork *networks) {
       continue;
 
     ssize_t network_id;
-    if ((network_id = check_exist_wire(ifa, networks)) == -1) {
+    if ((network_id = get_index_wire(ifa->ifa_name, networks)) == -1) {
       continue;
     }
 
@@ -564,6 +559,14 @@ static int json_print_signal_object(const Wireless *wire, const char *indent,
            wire->link);
     printed_field = 1;
   }
+  if (OUTPUT_SHOW_SIGNAL_LEVEL) {
+    const char *color = get_signal_color(wire->noise);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"color\": \"%s\"", indent, indent, indent, indent,
+           color ? color : "");
+    printed_field = 1;
+  }
   if (OUTPUT_SHOW_NOISE_LEVEL) {
     if (printed_field)
       printf(",%s", newline);
@@ -710,9 +713,11 @@ void vec_networks_json_output(VecNetwork *networks) {
 
 static int utf8_width(const char *str) {
   int width = 0;
-  if (!str) return 0;
+  if (!str)
+    return 0;
   for (const unsigned char *p = (const unsigned char *)str; *p; p++) {
-    if ((*p & 0xC0) != 0x80) width++;
+    if ((*p & 0xC0) != 0x80)
+      width++;
   }
   return width;
 }
