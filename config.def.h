@@ -111,6 +111,9 @@ static const signal_level_t signal_levels[] = {
 #define OUTPUT_SHOW_NOISE_LEVEL 1
 #define OUTPUT_SHOW_IPV4 1
 #define OUTPUT_SHOW_IPV6 1
+#ifndef OUTPUT_SHOW_SSID
+#define OUTPUT_SHOW_SSID 1
+#endif
 #define OUTPUT_IPV6_TYPE_MULTICAST 1
 #define OUTPUT_IPV6_TYPE_LINK_LOCAL 1
 #define OUTPUT_IPV6_TYPE_ULA 1
@@ -119,7 +122,7 @@ static const signal_level_t signal_levels[] = {
 
 /* ===== Terminal Output Configuration ===== */
 #define OUTPUT_FORMAT_TERMINAL 1
-#define TERMINAL_STYLE 1
+#define TERMINAL_STYLE 3 /* 0=compact, 1=verbose, 2=minimal, 3=detailed */
 #define TERMINAL_USE_ASCII_BOXES 1
 
 /* ===== IP Version Icons ===== */

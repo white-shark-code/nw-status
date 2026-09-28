@@ -153,19 +153,26 @@ void test_terminal_output_verbose_style(void) {
     Network *net = create_test_network("wlan0", 50.0f, -55.0f, -95.0f);
     vec_networks_push(nets, net);
     free(net);
-    
+
     capture_start();
     vec_networks_terminal_output(nets);
     const char *output = capture_end();
-    
+
     TEST_ASSERT_TRUE(strstr(output, "wlan0") != NULL);
-    TEST_ASSERT_TRUE(strstr(output, "UP") != NULL);
     TEST_ASSERT_TRUE(strstr(output, "192.168.1.100") != NULL);
     TEST_ASSERT_TRUE(strstr(output, "fe80::1") != NULL);
     TEST_ASSERT_TRUE(strstr(output, "2001:db8::1") != NULL);
+#if TERMINAL_STYLE == 1
+    TEST_ASSERT_TRUE(strstr(output, "UP") != NULL);
     TEST_ASSERT_TRUE(strstr(output, "+") != NULL);
     TEST_ASSERT_TRUE(strstr(output, "|") != NULL);
-    
+#elif TERMINAL_STYLE == 3
+    /* detailed: no boxes, ssid fallback (create_test_network leaves ssid empty) */
+    TEST_ASSERT_TRUE(strstr(output, "noname") != NULL);
+    TEST_ASSERT_TRUE(strstr(output, "ip-addresses:") != NULL);
+    TEST_ASSERT_TRUE(strstr(output, "+") == NULL);
+#endif
+
     vec_networks_free(nets);
 }
 
@@ -205,15 +212,89 @@ void test_terminal_output_ipv6_filtering(void) {
     vec_networks_free(nets);
 }
 
+void test_json_output_ssid_field(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -55.0f, -95.0f);
+    strcpy(net->wire->ssid, "MyHome");
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_json_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "\"ssid\": \"MyHome\"") != NULL);
+
+    vec_networks_free(nets);
+}
+
+void test_json_output_ssid_fallback(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -55.0f, -95.0f);
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_json_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "\"ssid\": \"noname\"") != NULL);
+
+    vec_networks_free(nets);
+}
+
+void test_short_output_basic(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -55.0f, -95.0f);
+    strcpy(net->wire->ssid, "MyHome");
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_short_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "MyHome") != NULL);
+    TEST_ASSERT_TRUE(strstr(output, "+") == NULL);
+
+    vec_networks_free(nets);
+}
+
+void test_short_output_fallback_and_guards(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -55.0f, -95.0f);
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_short_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "noname") != NULL);
+
+    vec_networks_free(nets);
+}
+
+void test_short_output_null_guard(void) {
+    capture_start();
+    vec_networks_short_output(NULL);
+    TEST_ASSERT_EQUAL_STRING("", capture_end());
+}
+
 void run_output_tests(void) {
     RUN_TEST(test_json_output_basic);
     RUN_TEST(test_json_output_signal_fields);
     RUN_TEST(test_json_output_multiple_networks);
     RUN_TEST(test_json_output_null_networks);
+    RUN_TEST(test_json_output_ssid_field);
+    RUN_TEST(test_json_output_ssid_fallback);
     RUN_TEST(test_terminal_output_verbose_style);
     RUN_TEST(test_terminal_output_empty);
     RUN_TEST(test_terminal_output_null);
     RUN_TEST(test_terminal_output_ipv6_filtering);
+    RUN_TEST(test_short_output_basic);
+    RUN_TEST(test_short_output_fallback_and_guards);
+    RUN_TEST(test_short_output_null_guard);
 }
 
 void test_output(void) {

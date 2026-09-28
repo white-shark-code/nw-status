@@ -7,7 +7,7 @@ Network status utility for Linux. Outputs wireless interface information and IP 
 - Reads wireless interface data from `/proc/net/wireless`
 - Retrieves IPv4 and IPv6 addresses via `getifaddrs()`
 - Classifies IPv6 addresses: global, link-local, multicast, ULA
-- **Two output formats**: JSON (default) and terminal (3 styles)
+- **Two output formats**: JSON (default) and terminal (4 styles)
 - **Suckless-style configuration**: `config.def.h` (defaults) + `config.h` (user, gitignored)
 - **Field visibility control**: toggle any field via config
 - **Nerd Font icons** with per-interface/link/level colors
@@ -68,7 +68,7 @@ $EDITOR config.h
 | Macro | Values | Description |
 |-------|--------|-------------|
 | `OUTPUT_FORMAT_TERMINAL` | `0` (JSON), `1` (terminal) | Output format selector |
-| `TERMINAL_STYLE` | `0`=compact, `1`=verbose, `2`=minimal | Terminal style |
+| `TERMINAL_STYLE` | `0`=compact, `1`=verbose, `2`=minimal, `3`=detailed (default) | Terminal style |
 | `TERMINAL_USE_ASCII_BOXES` | `1` | Use ASCII box drawing |
 
 ### JSON Options
@@ -89,6 +89,7 @@ $EDITOR config.h
 | `OUTPUT_SHOW_NOISE_LEVEL` | Noise level (dBm) |
 | `OUTPUT_SHOW_IPV4` | IPv4 addresses |
 | `OUTPUT_SHOW_IPV6` | IPv6 addresses |
+| `OUTPUT_SHOW_SSID` | SSID (wireless network name, JSON `ssid` field) |
 
 ### IPv6 Filters
 
@@ -166,20 +167,21 @@ static const level_icon_t level_icons[] = {
 ## Usage
 
 ```bash
-# JSON output (default, uses config.h OUTPUT_FORMAT_TERMINAL=0)
+# Default output (format/style from config.h: OUTPUT_FORMAT_TERMINAL, TERMINAL_STYLE)
 ./build/nw-status
 
-# Terminal verbose (boxes, requires OUTPUT_FORMAT_TERMINAL=1, TERMINAL_STYLE=1)
-./build/nw-status
+# Short output: `<signal icon> <ssid>` (overrides OUTPUT_FORMAT_TERMINAL)
+./build/nw-status --short
+./build/nw-status -s
 
-# Terminal compact (one-liner)
-./build/nw-status
-
-# Terminal minimal (icons only)
-./build/nw-status
+# Show help
+./build/nw-status --help
+./build/nw-status -h
 ```
 
-Format/style controlled entirely by `config.h` — no CLI arguments.
+Short mode prints `<signal icon> <ssid>` per interface (`noname` if the SSID is empty or unavailable).
+An unknown flag prints an error to stderr and exits with status `1`.
+The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`, `TERMINAL_STYLE`); `--short` overrides the format selector.
 
 ## Output Examples
 
@@ -190,6 +192,7 @@ Format/style controlled entirely by `config.h` — no CLI arguments.
     "networks": [
         {
             "interface": "wlan0",
+            "ssid": "MyNetwork",
             "signal": {
                 "quality": "LOW",
                 "level_dbm": -35.0,
@@ -213,6 +216,7 @@ Format/style controlled entirely by `config.h` — no CLI arguments.
 ```json
 {
     "interface": "wlan0",
+    "ssid": "MyNetwork",
     "interface_icon": "󰖩",
     "interface_icon_color": "#ffffff",
     "signal": {
@@ -255,11 +259,32 @@ Format/style controlled entirely by `config.h` — no CLI arguments.
   󰖩 wlan0  󰤯  󰇧  󰤟  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
 ```
 
+### Terminal detailed (`TERMINAL_STYLE=3`, default)
+
+Line-by-line output without boxes (SSID is shown in all terminal modes).
+Respects `OUTPUT_SHOW_*` and the IPv6 filters.
+
+```
+󰤨 MyNetwork (wlan0)
+UP level -35.0 dBm link 70% noise -256 dBm
+ip-addresses: 󰈀 192.168.1.4 󰀄 2001:ee0::/64 󰣇 fe80::/64
+```
+
+### Short output (`--short` / `-s`)
+
+Prints `<signal icon> <ssid>` per interface, overriding `OUTPUT_FORMAT_TERMINAL`.
+Empty or unavailable SSID is shown as `noname`.
+
+```
+󰤨 MyNetwork
+```
+
 ## JSON Fields
 
 | Field | Description |
 |-------|-------------|
 | `interface` | Wireless interface name |
+| `ssid` | Wireless network name (via `ioctl(SIOCGIWESSID)`; `noname` if empty/unavailable; hidden if `OUTPUT_SHOW_SSID=0`; quotes escaped in JSON) |
 | `interface_icon` | Nerd Font icon (if `JSON_OUTPUT_ICONS=1`) |
 | `interface_icon_color` | Hex color (if `JSON_OUTPUT_ICONS=1`) |
 | `signal.quality` | Quality label: LOW/MEDIUM/HIGH |

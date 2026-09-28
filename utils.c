@@ -3,6 +3,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <linux/wireless.h>
+
+#ifndef IW_ESSID_OFF
+#define IW_ESSID_OFF 0
+#endif
 
 #include "config.h"
 
@@ -36,6 +45,67 @@ FILE *read_file(const char *path) {
     return NULL;
   }
   return f;
+}
+
+int get_wireless_ssid(const char *ifname, char *ssid_buf, size_t buf_len) {
+  if (!ifname || !ssid_buf || buf_len == 0)
+    return -1;
+
+  int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (fd < 0)
+    return -1;
+
+  struct iwreq wrq;
+  memset(&wrq, 0, sizeof(wrq));
+  strncpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
+  wrq.ifr_name[IFNAMSIZ - 1] = '\0';
+
+  char essid[IW_ESSID_MAX_SIZE + 1];
+  memset(essid, 0, sizeof(essid));
+  wrq.u.essid.pointer = essid;
+  wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
+  wrq.u.essid.flags = 0;
+
+  if (ioctl(fd, SIOCGIWESSID, &wrq) < 0) {
+    ssid_buf[0] = '\0';
+    close(fd);
+    return -1;
+  }
+
+  if (wrq.u.essid.flags == IW_ESSID_OFF || wrq.u.essid.length == 0) {
+    ssid_buf[0] = '\0';
+    close(fd);
+    return -1;
+  }
+
+  size_t essid_len = (size_t)wrq.u.essid.length;
+  if (essid_len > (size_t)IW_ESSID_MAX_SIZE)
+    essid_len = (size_t)IW_ESSID_MAX_SIZE;
+  if (essid_len > buf_len - 1)
+    essid_len = buf_len - 1;
+
+  memcpy(ssid_buf, essid, essid_len);
+  ssid_buf[essid_len] = '\0';
+  ssid_buf[buf_len - 1] = '\0';
+
+  close(fd);
+  return 0;
+}
+
+void enrich_networks_with_ssid(VecNetwork *networks) {
+  if (!networks)
+    return;
+
+  for (size_t i = 0; i < networks->size; i++) {
+    if (!networks->data[i].wire)
+      continue;
+    int ret = get_wireless_ssid(networks->data[i].wire->name,
+                                networks->data[i].wire->ssid,
+                                sizeof(networks->data[i].wire->ssid));
+    if (ret == -1) {
+      networks->data[i].wire->ssid[0] = '\0';
+    }
+  }
 }
 
 Wireless get_wire_iface(const char *row) {
@@ -245,6 +315,7 @@ Network *network_init() {
   if (!network->wire) {
     return NULL;
   }
+  memset(network->wire, 0, sizeof(Wireless));
   network->addresses_ipv4 = vec_init_addresses_ipv4();
   network->addresses_ipv6 = vec_init_addresses_ipv6();
 
@@ -262,6 +333,7 @@ Network *network_init_with_capacity(size_t capacity) {
     free(network);
     return NULL;
   }
+  memset(network->wire, 0, sizeof(Wireless));
   network->addresses_ipv4 = vec_init_addresses_ipv4_with_capacity(capacity);
   network->addresses_ipv6 = vec_init_addresses_ipv6_with_capacity(capacity);
 
@@ -474,14 +546,49 @@ static void json_print_footer(const char *indent, const char *newline) {
   printf("}%s", newline);
 }
 
+static void json_escape_ssid(const char *src, char *dst, size_t dst_size) {
+  size_t j = 0;
+  if (dst_size == 0)
+    return;
+  if (!src) {
+    dst[0] = '\0';
+    return;
+  }
+  for (size_t i = 0; src[i] != '\0'; i++) {
+    char c = src[i];
+    if (c == '"' || c == '\\') {
+      if (j + 2 >= dst_size)
+        break;
+      dst[j++] = '\\';
+      dst[j++] = c;
+    } else {
+      if (j + 1 >= dst_size)
+        break;
+      dst[j++] = c;
+    }
+  }
+  dst[j] = '\0';
+}
+
 static int json_print_interface_field(const Wireless *wire, const char *indent,
-                                      const char *newline
-                                      __attribute__((unused))) {
+                                      const char *newline) {
   int printed = 0;
   if (OUTPUT_SHOW_INTERFACE_NAME) {
     printf("%s%s%s\"interface\": \"%s\"", indent, indent, indent, wire->name);
     printed = 1;
   }
+#if OUTPUT_SHOW_SSID
+  {
+    const char *ssid_src =
+        (wire && wire->ssid[0] != '\0') ? wire->ssid : "noname";
+    char escaped[67];
+    json_escape_ssid(ssid_src, escaped, sizeof(escaped));
+    if (printed)
+      printf(",%s", newline);
+    printf("%s%s%s\"ssid\": \"%s\"", indent, indent, indent, escaped);
+    printed = 1;
+  }
+#endif
 #if JSON_OUTPUT_ICONS
   if (OUTPUT_SHOW_INTERFACE_NAME) {
     const char *iface_icon = get_interface_icon(wire->name);
@@ -711,7 +818,7 @@ void vec_networks_json_output(VecNetwork *networks) {
 
 /* Terminal output helper functions */
 
-static int utf8_width(const char *str) {
+static int __attribute__((unused)) utf8_width(const char *str) {
   int width = 0;
   if (!str)
     return 0;
@@ -722,14 +829,16 @@ static int utf8_width(const char *str) {
   return width;
 }
 
-static int calculate_max_width(const VecNetwork *networks) {
+static int __attribute__((unused))
+calculate_max_width(const VecNetwork *networks) {
   int max_width = 60;
   for (size_t i = 0; i < networks->size; i++) {
     const Wireless *wire = networks->data[i].wire;
     const char *iface_icon = get_interface_icon(wire->name);
-    char title[128];
-    snprintf(title, sizeof(title), "%s %s (%s)", iface_icon, wire->name,
-             get_interface_status_str(wire));
+    const char *ssid = wire->ssid[0] ? wire->ssid : "noname";
+    char title[160];
+    snprintf(title, sizeof(title), "%s %s (%s, %s)", iface_icon, ssid,
+             wire->name, get_interface_status_str(wire));
     int title_width = utf8_width(title);
     if (title_width > max_width)
       max_width = title_width;
@@ -759,7 +868,8 @@ static int calculate_max_width(const VecNetwork *networks) {
   return max_width;
 }
 
-static void print_box_top(int width, const char *title) {
+static void __attribute__((unused))
+print_box_top(int width, const char *title) {
   printf("  +");
   if (title) {
     int title_len = utf8_width(title);
@@ -776,14 +886,15 @@ static void print_box_top(int width, const char *title) {
   printf("+\n");
 }
 
-static void print_box_bottom(int width) {
+static void __attribute__((unused)) print_box_bottom(int width) {
   printf("  +");
   for (int i = 0; i < width; i++)
     printf("-");
   printf("+\n");
 }
 
-static void print_box_line(int width, const char *content) {
+static void __attribute__((unused))
+print_box_line(int width, const char *content) {
   int content_len = utf8_width(content);
   printf("  | %s", content);
   for (int i = 0; i < width - content_len - 1; i++)
@@ -791,7 +902,8 @@ static void print_box_line(int width, const char *content) {
   printf("|\n");
 }
 
-static void terminal_print_verbose_network(const Network *net, int width) {
+static void __attribute__((unused))
+terminal_print_verbose_network(const Network *net, int width) {
   const Wireless *wire = net->wire;
   const char *status = get_interface_status_str(wire);
   const char *iface_icon = get_interface_icon(wire->name);
@@ -800,8 +912,10 @@ static void terminal_print_verbose_network(const Network *net, int width) {
   const char *link_icon = get_link_icon((int)wire->link);
   const char *level_icon = get_level_icon(wire->level);
 
-  char title[128];
-  snprintf(title, sizeof(title), "%s %s (%s)", iface_icon, wire->name, status);
+  char title[160];
+  const char *ssid = wire->ssid[0] ? wire->ssid : "noname";
+  snprintf(title, sizeof(title), "%s %s (%s, %s)", iface_icon, ssid, wire->name,
+           status);
   print_box_top(width, title);
 
   char line[256];
@@ -886,6 +1000,10 @@ terminal_print_compact_network(const Network *net) {
   const char *ipv4_icon = get_ipv4_icon();
 
   printf("%s %s (%s)", iface_icon, wire->name, status);
+  {
+    const char *ssid = wire->ssid[0] ? wire->ssid : "noname";
+    printf("  %s", ssid);
+  }
 
   if (OUTPUT_SHOW_SIGNAL_LEVEL) {
     printf("  %s %.1fdBm", signal_icon, wire->level);
@@ -925,6 +1043,10 @@ terminal_print_minimal_network(const Network *net) {
   const char *ipv4_icon = get_ipv4_icon();
 
   printf("%s %s", iface_icon, wire->name);
+  {
+    const char *ssid = wire->ssid[0] ? wire->ssid : "noname";
+    printf("  %s", ssid);
+  }
 
   if (OUTPUT_SHOW_SIGNAL_LEVEL) {
     printf("  %s", signal_icon);
@@ -954,6 +1076,91 @@ terminal_print_minimal_network(const Network *net) {
   printf("\n");
 }
 
+static void __attribute__((unused))
+terminal_print_detailed_network(const Network *net) {
+  if (!net || !net->wire)
+    return;
+  const Wireless *wire = net->wire;
+  const char *signal_icon = get_signal_icon(wire->noise);
+  const char *ssid = wire->ssid[0] ? wire->ssid : "noname";
+  const char *status = get_interface_status_str(wire);
+
+  printf("%s %s (%s)\n", signal_icon, ssid, wire->name);
+
+  if (OUTPUT_SHOW_INTERFACE_STATUS) {
+    printf("  %s", status);
+  }
+  if (OUTPUT_SHOW_SIGNAL_LEVEL) {
+    printf("  level %.1f dBm", wire->level);
+  }
+  if (OUTPUT_SHOW_LINK_QUALITY) {
+    printf("  link %.0f%%", wire->link);
+  }
+  if (OUTPUT_SHOW_NOISE_LEVEL) {
+    printf("  noise %.1fdBm", wire->noise);
+  }
+  printf("\n");
+
+  int header_printed = 0;
+  if (OUTPUT_SHOW_IPV4 && net->addresses_ipv4 &&
+      net->addresses_ipv4->size > 0) {
+    printf("  ip-addresses:\n    ipv4:\n");
+    header_printed = 1;
+    const char *ipv4_icon = get_ipv4_icon();
+    for (size_t j = 0; j < net->addresses_ipv4->size; j++) {
+      printf("      %s %s\n", ipv4_icon, net->addresses_ipv4->data[j].address);
+    }
+  }
+
+  if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6 &&
+      net->addresses_ipv6->size > 0) {
+    int has_visible = 0;
+    for (size_t j = 0; j < net->addresses_ipv6->size; j++) {
+      if (should_show_ipv6_type(net->addresses_ipv6->data[j].type) &&
+          should_show_ipv6_scope(net->addresses_ipv6->data[j].scope_id)) {
+        has_visible = 1;
+        break;
+      }
+    }
+    if (has_visible) {
+      if (!header_printed) {
+        printf("  ip-addresses:\n");
+        header_printed = 1;
+      }
+      printf("    ipv6:\n");
+      for (size_t j = 0; j < net->addresses_ipv6->size; j++) {
+        const IPv6 *ip = &net->addresses_ipv6->data[j];
+        if (!should_show_ipv6_type(ip->type) ||
+            !should_show_ipv6_scope(ip->scope_id))
+          continue;
+        const char *icon = get_ipv6_icon(ip);
+        if (ip->scope_id > 0) {
+          printf("      %s %s (%s, scope %u)\n", icon, ip->address, ip->type,
+                 ip->scope_id);
+        } else {
+          printf("      %s %s (%s)\n", icon, ip->address, ip->type);
+        }
+      }
+    }
+  }
+}
+
+static void short_print_network(const Network *net) {
+  if (!net || !net->wire)
+    return;
+  const char *icon = get_signal_icon(net->wire->noise);
+  const char *ssid = net->wire->ssid[0] ? net->wire->ssid : "noname";
+  printf("%s %s\n", icon, ssid);
+}
+
+void vec_networks_short_output(VecNetwork *networks) {
+  if (!networks || networks->size == 0)
+    return;
+  for (size_t i = 0; i < networks->size; i++) {
+    short_print_network(&networks->data[i]);
+  }
+}
+
 void vec_networks_terminal_output(VecNetwork *networks) {
   if (!networks || networks->size == 0) {
     return;
@@ -973,6 +1180,12 @@ void vec_networks_terminal_output(VecNetwork *networks) {
 #elif TERMINAL_STYLE == 2
   for (size_t i = 0; i < networks->size; i++) {
     terminal_print_minimal_network(&networks->data[i]);
+  }
+#elif TERMINAL_STYLE == 3
+  for (size_t i = 0; i < networks->size; i++) {
+    terminal_print_detailed_network(&networks->data[i]);
+    if (i + 1 < networks->size)
+      printf("\n");
   }
 #else
   for (size_t i = 0; i < networks->size; i++) {

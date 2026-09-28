@@ -18,6 +18,7 @@
 typedef struct {
   char name[64];
   char status[5];
+  char ssid[33];
   float link, level, noise;
 } Wireless;
 
@@ -64,6 +65,8 @@ VecWirelesses *get_all_wire_ifaces(FILE *file);
 int vec_networks_push(VecNetwork *networks, Network *network);
 VecNetwork *prepair_networks_using_wireless(VecWirelesses *wirelesses);
 ssize_t get_index_wire(const char *ifa_name, VecNetwork *networks);
+int get_wireless_ssid(const char *ifname, char *ssid_buf, size_t buf_len);
+void enrich_networks_with_ssid(VecNetwork *networks);
 int get_addr(VecNetwork *networks);
 void vec_networks_json_output(VecNetwork *networks);
 
@@ -89,6 +92,7 @@ void vec_networks_free(VecNetwork *networks);
 
 /* Terminal output */
 void vec_networks_terminal_output(VecNetwork *networks);
+void vec_networks_short_output(VecNetwork *networks);
 
 /* Shared helpers for field filtering */
 const char *get_interface_status_str(const Wireless *wire);
