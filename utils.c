@@ -705,14 +705,26 @@ void vec_networks_json_output(VecNetwork *networks) {
 
 /* Terminal output helper functions */
 
+static int utf8_width(const char *str) {
+  int width = 0;
+  if (!str) return 0;
+  for (const unsigned char *p = (const unsigned char *)str; *p; p++) {
+    if ((*p & 0xC0) != 0x80) width++;
+  }
+  return width;
+}
+
 static int calculate_max_width(const VecNetwork *networks) {
   int max_width = 60;
   for (size_t i = 0; i < networks->size; i++) {
     const Wireless *wire = networks->data[i].wire;
-    int width = snprintf(NULL, 0, " %s (%s) ", wire->name,
-                         get_interface_status_str(wire));
-    if (width > max_width)
-      max_width = width;
+    const char *iface_icon = get_interface_icon(wire->name);
+    char title[128];
+    snprintf(title, sizeof(title), "%s %s (%s)", iface_icon, wire->name,
+             get_interface_status_str(wire));
+    int title_width = utf8_width(title);
+    if (title_width > max_width)
+      max_width = title_width;
     if (networks->data[i].addresses_ipv4) {
       for (size_t j = 0; j < networks->data[i].addresses_ipv4->size; j++) {
         int w = snprintf(NULL, 0, " %s ",
@@ -740,9 +752,9 @@ static int calculate_max_width(const VecNetwork *networks) {
 }
 
 static void print_box_top(int width, const char *title) {
-  printf("+");
+  printf("  +");
   if (title) {
-    int title_len = (int)strlen(title);
+    int title_len = utf8_width(title);
     int padding = (width - title_len - 2) / 2;
     for (int i = 0; i < padding; i++)
       printf("-");
@@ -757,15 +769,15 @@ static void print_box_top(int width, const char *title) {
 }
 
 static void print_box_bottom(int width) {
-  printf("+");
+  printf("  +");
   for (int i = 0; i < width; i++)
     printf("-");
   printf("+\n");
 }
 
 static void print_box_line(int width, const char *content) {
-  int content_len = (int)strlen(content);
-  printf("| %s", content);
+  int content_len = utf8_width(content);
+  printf("  | %s", content);
   for (int i = 0; i < width - content_len - 1; i++)
     printf(" ");
   printf("|\n");
