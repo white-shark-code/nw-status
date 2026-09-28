@@ -16,7 +16,8 @@ $(CONFIG_H): $(CONFIG_DEF_H)
 
 COMMON_CFLAGS := -no-pie -I./ \
                  -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wnull-dereference \
-                 -fstack-protector-strong
+                 -fstack-protector-strong \
+                 -include config.h
 
 PROD_CFLAGS   := $(COMMON_CFLAGS) -O3 -march=native -DNDEBUG
 PROD_LDFLAGS  := -s

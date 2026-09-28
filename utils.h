@@ -84,4 +84,18 @@ void network_free(Network *network);
 VecNetwork *vec_networks_init();
 void vec_networks_free(VecNetwork *networks);
 
+/* Terminal output */
+void vec_networks_terminal_output(VecNetwork *networks);
+
+/* Shared helpers for field filtering */
+const char *get_interface_status_str(const Wireless *wire);
+int should_show_ipv6_type(const char *type);
+int should_show_ipv6_scope(uint32_t scope);
+
+/* IPv4/IPv6 icons for terminal output */
+const char *get_ipv4_icon(void);
+const char *get_ipv4_icon_color(void);
+const char *get_ipv6_icon(const IPv6 *ip);
+const char *get_ipv6_icon_color(const IPv6 *ip);
+
 #endif /* __UTILS_H__ */

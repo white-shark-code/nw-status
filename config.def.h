@@ -101,4 +101,33 @@ static const signal_level_t signal_levels[] = {
 #define JSON_OUTPUT_ICONS 0    /* 1 = include "icon" fields in JSON */
 #define JSON_OUTPUT_COMPACT 0  /* 1 = compact, 0 = pretty printed */
 
+/* ===== Field Visibility Flags ===== */
+#define OUTPUT_SHOW_INTERFACE_NAME 1
+#define OUTPUT_SHOW_INTERFACE_STATUS 1
+#define OUTPUT_SHOW_LINK_QUALITY 1
+#define OUTPUT_SHOW_SIGNAL_LEVEL 1
+#define OUTPUT_SHOW_NOISE_LEVEL 1
+#define OUTPUT_SHOW_IPV4 1
+#define OUTPUT_SHOW_IPV6 1
+#define OUTPUT_IPV6_TYPE_MULTICAST 1
+#define OUTPUT_IPV6_TYPE_LINK_LOCAL 1
+#define OUTPUT_IPV6_TYPE_ULA 1
+#define OUTPUT_IPV6_TYPE_GLOBAL 1
+#define OUTPUT_IPV6_MAX_SCOPE_ID 0
+
+/* ===== Terminal Output Configuration ===== */
+#define OUTPUT_FORMAT_TERMINAL 1
+#define TERMINAL_STYLE 1
+#define TERMINAL_USE_ASCII_BOXES 1
+
+/* ===== IP Version Icons ===== */
+#define DEFAULT_IPV4_ICON "󰈀"
+#define DEFAULT_IPV4_ICON_COLOR "#00ffff"
+#define DEFAULT_IPV6_ICON "󰈁"
+#define DEFAULT_IPV6_ICON_COLOR "#ff8800"
+#define IPV6_ICON_MULTICAST "󰍜"
+#define IPV6_ICON_LINK_LOCAL "󰣇"
+#define IPV6_ICON_ULA "󰖩"
+#define IPV6_ICON_GLOBAL "󰀄"
+
 #endif
