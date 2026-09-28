@@ -2,9 +2,9 @@
 #define VEC_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 #define VECTOR_INITIAL_CAPACITY 8
 

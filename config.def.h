@@ -7,9 +7,9 @@
 
 /* ===== Interface icons ===== */
 typedef struct {
-    const char *iface;
-    const char *icon;
-    const char *color;     /* Optional: hex color "#ff0000" or NULL */
+  const char *iface;
+  const char *icon;
+  const char *color; /* Optional: hex color "#ff0000" or NULL */
 } interface_icon_t;
 
 /* Default interface icon for all interfaces */
@@ -30,10 +30,10 @@ typedef struct {
 
 /* ===== Link quality icons ===== */
 typedef struct {
-    int threshold;         /* Link quality threshold (0-100). Higher = better.
-                              Array ordered from worst to best (ascending thresholds). */
-    const char *icon;      /* Nerd Font icon */
-    const char *color;     /* Optional: hex color or NULL */
+  int threshold;     /* Link quality threshold (0-100). Higher = better.
+                        Array ordered from worst to best (ascending thresholds). */
+  const char *icon;  /* Nerd Font icon */
+  const char *color; /* Optional: hex color or NULL */
 } link_icon_t;
 
 /* Default link icon */
@@ -55,10 +55,11 @@ typedef struct {
 
 /* ===== Signal level icons ===== */
 typedef struct {
-    float threshold;       /* Signal level threshold in dBm. Higher = better.
-                              Array ordered from worst to best (ascending thresholds). */
-    const char *icon;      /* Nerd Font icon */
-    const char *color;     /* Optional: hex color or NULL */
+  float
+      threshold;     /* Signal level threshold in dBm. Higher = better.
+                        Array ordered from worst to best (ascending thresholds). */
+  const char *icon;  /* Nerd Font icon */
+  const char *color; /* Optional: hex color or NULL */
 } level_icon_t;
 
 /* Default level icon */
@@ -81,25 +82,26 @@ typedef struct {
 
 /* ===== Signal quality levels ===== */
 typedef struct {
-    float threshold;       /* Noise threshold in dBm (float). Lower = better.
-                              Array ordered from worst to best (ascending thresholds). */
-    const char *label;     /* Text label: "LOW", "MEDIUM", "HIGH", etc. */
-    const char *icon;      /* Nerd Font icon: "󰤯", "󰤟", "󰤨" */
-    const char *color;     /* Optional: hex color "#ff0000" or NULL */
+  float
+      threshold;     /* Noise threshold in dBm (float). Lower = better.
+                        Array ordered from worst to best (ascending thresholds). */
+  const char *label; /* Text label: "LOW", "MEDIUM", "HIGH", etc. */
+  const char *icon;  /* Nerd Font icon: "󰤯", "󰤟", "󰤨" */
+  const char *color; /* Optional: hex color "#ff0000" or NULL */
 } signal_level_t;
 
 /* Signal levels - worst to best */
 static const signal_level_t signal_levels[] = {
-    { -70.0f, "LOW",    "󰤯", "#ff0000" },
-    { -50.0f, "MEDIUM", "󰤟", "#ffff00" },
-    { -30.0f, "HIGH",   "󰤨", "#00ff00" },
+    {-70.0f, "LOW", "󰤯", "#ff0000"},
+    {-50.0f, "MEDIUM", "󰤟", "#ffff00"},
+    {-30.0f, "HIGH", "󰤨", "#00ff00"},
 };
 
 #define SIGNAL_LEVEL_COUNT (sizeof(signal_levels) / sizeof(signal_levels[0]))
 
 /* ===== JSON Output Configuration ===== */
-#define JSON_OUTPUT_ICONS 0    /* 1 = include "icon" fields in JSON */
-#define JSON_OUTPUT_COMPACT 0  /* 1 = compact, 0 = pretty printed */
+#define JSON_OUTPUT_ICONS 0   /* 1 = include "icon" fields in JSON */
+#define JSON_OUTPUT_COMPACT 0 /* 1 = compact, 0 = pretty printed */
 
 /* ===== Field Visibility Flags ===== */
 #define OUTPUT_SHOW_INTERFACE_NAME 1

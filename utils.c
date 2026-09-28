@@ -143,12 +143,14 @@ const char *get_interface_icon(const char *iface __attribute__((unused))) {
   return DEFAULT_INTERFACE_ICON;
 }
 
-const char *get_interface_icon_color(const char *iface __attribute__((unused))) {
+const char *get_interface_icon_color(const char *iface
+                                     __attribute__((unused))) {
 #if INTERFACE_ICON_COUNT > 0
   extern const interface_icon_t interface_icons[];
   for (size_t i = 0; i < INTERFACE_ICON_COUNT; i++) {
     if (strcmp(iface, interface_icons[i].iface) == 0) {
-      return interface_icons[i].color ? interface_icons[i].color : DEFAULT_INTERFACE_ICON_COLOR;
+      return interface_icons[i].color ? interface_icons[i].color
+                                      : DEFAULT_INTERFACE_ICON_COLOR;
     }
   }
 #endif
@@ -172,7 +174,8 @@ const char *get_link_icon_color(int link __attribute__((unused))) {
   extern const link_icon_t link_icons[];
   for (size_t i = 0; i < LINK_ICON_COUNT; i++) {
     if (link >= link_icons[i].threshold) {
-      return link_icons[i].color ? link_icons[i].color : DEFAULT_LINK_ICON_COLOR;
+      return link_icons[i].color ? link_icons[i].color
+                                 : DEFAULT_LINK_ICON_COLOR;
     }
   }
 #endif
@@ -196,20 +199,17 @@ const char *get_level_icon_color(float level __attribute__((unused))) {
   extern const level_icon_t level_icons[];
   for (size_t i = 0; i < LEVEL_ICON_COUNT; i++) {
     if (level >= level_icons[i].threshold) {
-      return level_icons[i].color ? level_icons[i].color : DEFAULT_LEVEL_ICON_COLOR;
+      return level_icons[i].color ? level_icons[i].color
+                                  : DEFAULT_LEVEL_ICON_COLOR;
     }
   }
 #endif
   return DEFAULT_LEVEL_ICON_COLOR;
 }
 
-const char *get_ipv4_icon(void) {
-  return DEFAULT_IPV4_ICON;
-}
+const char *get_ipv4_icon(void) { return DEFAULT_IPV4_ICON; }
 
-const char *get_ipv4_icon_color(void) {
-  return DEFAULT_IPV4_ICON_COLOR;
-}
+const char *get_ipv4_icon_color(void) { return DEFAULT_IPV4_ICON_COLOR; }
 
 const char *get_ipv6_icon(const IPv6 *ip) {
   if (!ip)
@@ -479,7 +479,9 @@ static void json_print_footer(const char *indent, const char *newline) {
   printf("}%s", newline);
 }
 
-static int json_print_interface_field(const Wireless *wire, const char *indent, const char *newline __attribute__((unused))) {
+static int json_print_interface_field(const Wireless *wire, const char *indent,
+                                      const char *newline
+                                      __attribute__((unused))) {
   int printed = 0;
   if (OUTPUT_SHOW_INTERFACE_NAME) {
     printf("%s%s%s\"interface\": \"%s\"", indent, indent, indent, wire->name);
@@ -489,27 +491,33 @@ static int json_print_interface_field(const Wireless *wire, const char *indent, 
   if (OUTPUT_SHOW_INTERFACE_NAME) {
     const char *iface_icon = get_interface_icon(wire->name);
     const char *iface_icon_color = get_interface_icon_color(wire->name);
-    if (printed) printf(",%s", newline);
-    printf("%s%s%s%s\"interface_icon\": \"%s\"", indent, indent, indent, indent, iface_icon);
+    if (printed)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"interface_icon\": \"%s\"", indent, indent, indent, indent,
+           iface_icon);
     printed = 1;
-    if (printed) printf(",%s", newline);
-    printf("%s%s%s%s\"interface_icon_color\": \"%s\"", indent, indent, indent, indent,
-           iface_icon_color ? iface_icon_color : "");
+    if (printed)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"interface_icon_color\": \"%s\"", indent, indent, indent,
+           indent, iface_icon_color ? iface_icon_color : "");
     printed = 1;
   }
 #endif
   return printed;
 }
 
-static int json_print_signal_object(const Wireless *wire, const char *indent, const char *newline) {
+static int json_print_signal_object(const Wireless *wire, const char *indent,
+                                    const char *newline) {
   const char *quality = get_signal_quality(wire->noise);
   int printed_field = 0;
 
   printf("%s%s%s\"signal\": {%s", indent, indent, indent, newline);
 
   if (OUTPUT_SHOW_LINK_QUALITY) {
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"quality\": \"%s\"", indent, indent, indent, indent, quality);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"quality\": \"%s\"", indent, indent, indent, indent,
+           quality);
     printed_field = 1;
   }
 #if JSON_OUTPUT_ICONS
@@ -519,52 +527,65 @@ static int json_print_signal_object(const Wireless *wire, const char *indent, co
     const char *link_icon_color = get_link_icon_color((int)wire->link);
     const char *level_icon = get_level_icon(wire->level);
     const char *level_icon_color = get_level_icon_color(wire->level);
-    if (printed_field) printf(",%s", newline);
+    if (printed_field)
+      printf(",%s", newline);
     printf("%s%s%s%s\"icon\": \"%s\"", indent, indent, indent, indent, icon);
     printed_field = 1;
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"link_icon\": \"%s\"", indent, indent, indent, indent, link_icon);
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"link_icon_color\": \"%s\"", indent, indent, indent, indent,
-           link_icon_color ? link_icon_color : "");
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"level_icon\": \"%s\"", indent, indent, indent, indent, level_icon);
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"level_icon_color\": \"%s\"", indent, indent, indent, indent,
-           level_icon_color ? level_icon_color : "");
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"link_icon\": \"%s\"", indent, indent, indent, indent,
+           link_icon);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"link_icon_color\": \"%s\"", indent, indent, indent,
+           indent, link_icon_color ? link_icon_color : "");
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"level_icon\": \"%s\"", indent, indent, indent, indent,
+           level_icon);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"level_icon_color\": \"%s\"", indent, indent, indent,
+           indent, level_icon_color ? level_icon_color : "");
     printed_field = 1;
   }
 #endif
   if (OUTPUT_SHOW_SIGNAL_LEVEL) {
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"level_dbm\": %.1f", indent, indent, indent, indent, wire->level);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"level_dbm\": %.1f", indent, indent, indent, indent,
+           wire->level);
     printed_field = 1;
   }
   if (OUTPUT_SHOW_LINK_QUALITY) {
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"link\": %.1f", indent, indent, indent, indent, wire->link);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"link\": %.1f", indent, indent, indent, indent,
+           wire->link);
     printed_field = 1;
   }
   if (OUTPUT_SHOW_NOISE_LEVEL) {
-    if (printed_field) printf(",%s", newline);
-    printf("%s%s%s%s\"noise_dbm\": %.1f", indent, indent, indent, indent, wire->noise);
+    if (printed_field)
+      printf(",%s", newline);
+    printf("%s%s%s%s\"noise_dbm\": %.1f", indent, indent, indent, indent,
+           wire->noise);
     printed_field = 1;
   }
   if (newline[0] != '\0') {
     printf("%s", newline);
   }
-  printf("%s%s%s}%s", indent, indent, indent, newline);
+  printf("%s%s%s}", indent, indent, indent);
   return printed_field;
 }
 
-static void json_print_ipv4_array(const VecAddressesIPv4 *addrs, const char *indent, const char *newline) {
+static void json_print_ipv4_array(const VecAddressesIPv4 *addrs,
+                                  const char *indent, const char *newline) {
   printf("%s%s%s%s\"ipv4\": [%s", indent, indent, indent, indent, newline);
 
   if (addrs && addrs->size != 0) {
     for (size_t j = 0; j < addrs->size; j++) {
       printf("%s%s%s%s%s\"%s\"%s", indent, indent, indent, indent, indent,
-             addrs->data[j].address,
-             (j + 1 < addrs->size) ? "," : "");
+             addrs->data[j].address, (j + 1 < addrs->size) ? "," : "");
       printf("%s", newline);
     }
     printf("%s%s%s%s]", indent, indent, indent, indent);
@@ -574,22 +595,24 @@ static void json_print_ipv4_array(const VecAddressesIPv4 *addrs, const char *ind
   printf(",%s", newline);
 }
 
-static void json_print_ipv6_entry(const IPv6 *ip, const char *indent, const char *newline __attribute__((unused))) {
+static void json_print_ipv6_entry(const IPv6 *ip, const char *indent,
+                                  const char *newline __attribute__((unused))) {
   printf("%s%s%s%s%s{\"address\": \"%s\", \"type\": \"%s\", "
          "\"scope_id\": %u}%s",
-         indent, indent, indent, indent, indent,
-         ip->address, ip->type, ip->scope_id,
-         "");
+         indent, indent, indent, indent, indent, ip->address, ip->type,
+         ip->scope_id, "");
 }
 
-static void json_print_ipv6_array(const VecAddressesIPv6 *addrs, const char *indent, const char *newline) {
+static void json_print_ipv6_array(const VecAddressesIPv6 *addrs,
+                                  const char *indent, const char *newline) {
   printf("%s%s%s%s\"ipv6\": [%s", indent, indent, indent, indent, newline);
 
   if (addrs && addrs->size != 0) {
     int first = 1;
     for (size_t j = 0; j < addrs->size; j++) {
       const IPv6 *ip = &addrs->data[j];
-      if (!should_show_ipv6_type(ip->type) || !should_show_ipv6_scope(ip->scope_id))
+      if (!should_show_ipv6_type(ip->type) ||
+          !should_show_ipv6_scope(ip->scope_id))
         continue;
 
       if (!first) {
@@ -607,17 +630,20 @@ static void json_print_ipv6_array(const VecAddressesIPv6 *addrs, const char *ind
   }
 }
 
-static int json_print_ip_object(const Network *net, const char *indent, const char *newline) {
+static int json_print_ip_object(const Network *net, const char *indent,
+                                const char *newline) {
   int printed = 0;
 
-  if (OUTPUT_SHOW_IPV4 && net->addresses_ipv4 && net->addresses_ipv4->size > 0) {
+  if (OUTPUT_SHOW_IPV4 && net->addresses_ipv4 &&
+      net->addresses_ipv4->size > 0) {
     if (!printed) {
       printf("%s%s%s\"ip\": {%s", indent, indent, indent, newline);
       printed = 1;
     }
     json_print_ipv4_array(net->addresses_ipv4, indent, newline);
   }
-  if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6 && net->addresses_ipv6->size > 0) {
+  if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6 &&
+      net->addresses_ipv6->size > 0) {
     if (!printed) {
       printf("%s%s%s\"ip\": {%s", indent, indent, indent, newline);
       printed = 1;
@@ -633,7 +659,8 @@ static int json_print_ip_object(const Network *net, const char *indent, const ch
   return printed;
 }
 
-static void json_print_network(const Network *net, const char *indent, const char *newline) {
+static void json_print_network(const Network *net, const char *indent,
+                               const char *newline) {
   const Wireless *wire = net->wire;
   int section_printed = 0;
 
@@ -642,7 +669,9 @@ static void json_print_network(const Network *net, const char *indent, const cha
   if (json_print_interface_field(wire, indent, newline)) {
     section_printed = 1;
   }
-  if (section_printed && (OUTPUT_SHOW_LINK_QUALITY || OUTPUT_SHOW_SIGNAL_LEVEL || OUTPUT_SHOW_NOISE_LEVEL)) {
+  if (section_printed &&
+      (OUTPUT_SHOW_LINK_QUALITY || OUTPUT_SHOW_SIGNAL_LEVEL ||
+       OUTPUT_SHOW_NOISE_LEVEL)) {
     printf(",%s", newline);
   }
   if (json_print_signal_object(wire, indent, newline)) {
@@ -680,12 +709,14 @@ static int calculate_max_width(const VecNetwork *networks) {
   int max_width = 60;
   for (size_t i = 0; i < networks->size; i++) {
     const Wireless *wire = networks->data[i].wire;
-    int width = snprintf(NULL, 0, " %s (%s) ", wire->name, get_interface_status_str(wire));
+    int width = snprintf(NULL, 0, " %s (%s) ", wire->name,
+                         get_interface_status_str(wire));
     if (width > max_width)
       max_width = width;
     if (networks->data[i].addresses_ipv4) {
       for (size_t j = 0; j < networks->data[i].addresses_ipv4->size; j++) {
-        int w = snprintf(NULL, 0, " %s ", networks->data[i].addresses_ipv4->data[j].address);
+        int w = snprintf(NULL, 0, " %s ",
+                         networks->data[i].addresses_ipv4->data[j].address);
         if (w > max_width)
           max_width = w;
       }
@@ -701,8 +732,10 @@ static int calculate_max_width(const VecNetwork *networks) {
       }
     }
   }
-  if (max_width < 60) max_width = 60;
-  if (max_width > 80) max_width = 80;
+  if (max_width < 60)
+    max_width = 60;
+  if (max_width > 80)
+    max_width = 80;
   return max_width;
 }
 
@@ -711,25 +744,30 @@ static void print_box_top(int width, const char *title) {
   if (title) {
     int title_len = (int)strlen(title);
     int padding = (width - title_len - 2) / 2;
-    for (int i = 0; i < padding; i++) printf("-");
+    for (int i = 0; i < padding; i++)
+      printf("-");
     printf(" %s ", title);
-    for (int i = 0; i < width - padding - title_len - 2; i++) printf("-");
+    for (int i = 0; i < width - padding - title_len - 2; i++)
+      printf("-");
   } else {
-    for (int i = 0; i < width; i++) printf("-");
+    for (int i = 0; i < width; i++)
+      printf("-");
   }
   printf("+\n");
 }
 
 static void print_box_bottom(int width) {
   printf("+");
-  for (int i = 0; i < width; i++) printf("-");
+  for (int i = 0; i < width; i++)
+    printf("-");
   printf("+\n");
 }
 
 static void print_box_line(int width, const char *content) {
   int content_len = (int)strlen(content);
   printf("| %s", content);
-  for (int i = 0; i < width - content_len - 1; i++) printf(" ");
+  for (int i = 0; i < width - content_len - 1; i++)
+    printf(" ");
   printf("|\n");
 }
 
@@ -749,35 +787,43 @@ static void terminal_print_verbose_network(const Network *net, int width) {
   char line[256];
   size_t pos = 0;
 
-  if (OUTPUT_SHOW_SIGNAL_LEVEL || OUTPUT_SHOW_LINK_QUALITY || OUTPUT_SHOW_NOISE_LEVEL) {
+  if (OUTPUT_SHOW_SIGNAL_LEVEL || OUTPUT_SHOW_LINK_QUALITY ||
+      OUTPUT_SHOW_NOISE_LEVEL) {
     pos = 0;
     if (OUTPUT_SHOW_SIGNAL_LEVEL) {
-      pos += (size_t)snprintf(line + pos, sizeof(line) - pos, "%s %s ", signal_icon, quality);
+      pos += (size_t)snprintf(line + pos, sizeof(line) - pos, "%s %s ",
+                              signal_icon, quality);
     }
     if (OUTPUT_SHOW_LINK_QUALITY) {
-      pos += (size_t)snprintf(line + pos, sizeof(line) - pos, "%s Link: %.0f%%  ", link_icon, wire->link);
+      pos += (size_t)snprintf(line + pos, sizeof(line) - pos,
+                              "%s Link: %.0f%%  ", link_icon, wire->link);
     }
     if (OUTPUT_SHOW_NOISE_LEVEL) {
-      pos += (size_t)snprintf(line + pos, sizeof(line) - pos, "%s Noise: %.0fdBm", level_icon, wire->noise);
+      pos += (size_t)snprintf(line + pos, sizeof(line) - pos,
+                              "%s Noise: %.0fdBm", level_icon, wire->noise);
     }
     print_box_line(width, line);
 
     if (OUTPUT_SHOW_SIGNAL_LEVEL) {
-      pos = (size_t)snprintf(line, sizeof(line), "%s Level:  %.1f dBm", level_icon, wire->level);
+      pos = (size_t)snprintf(line, sizeof(line), "%s Level:  %.1f dBm",
+                             level_icon, wire->level);
       print_box_line(width, line);
     }
   }
 
-  if (OUTPUT_SHOW_IPV4 && net->addresses_ipv4 && net->addresses_ipv4->size > 0) {
+  if (OUTPUT_SHOW_IPV4 && net->addresses_ipv4 &&
+      net->addresses_ipv4->size > 0) {
     print_box_top(width, "IPv4");
     const char *ipv4_icon = get_ipv4_icon();
     for (size_t j = 0; j < net->addresses_ipv4->size; j++) {
-      snprintf(line, sizeof(line), "%s  %s", ipv4_icon, net->addresses_ipv4->data[j].address);
+      snprintf(line, sizeof(line), "%s  %s", ipv4_icon,
+               net->addresses_ipv4->data[j].address);
       print_box_line(width, line);
     }
   }
 
-  if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6 && net->addresses_ipv6->size > 0) {
+  if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6 &&
+      net->addresses_ipv6->size > 0) {
     int has_visible = 0;
     for (size_t j = 0; j < net->addresses_ipv6->size; j++) {
       if (should_show_ipv6_type(net->addresses_ipv6->data[j].type) &&
@@ -790,13 +836,16 @@ static void terminal_print_verbose_network(const Network *net, int width) {
       print_box_top(width, "IPv6");
       for (size_t j = 0; j < net->addresses_ipv6->size; j++) {
         const IPv6 *ip = &net->addresses_ipv6->data[j];
-        if (!should_show_ipv6_type(ip->type) || !should_show_ipv6_scope(ip->scope_id))
+        if (!should_show_ipv6_type(ip->type) ||
+            !should_show_ipv6_scope(ip->scope_id))
           continue;
         const char *ipv6_icon = get_ipv6_icon(ip);
         if (ip->scope_id > 0) {
-          snprintf(line, sizeof(line), "%s  %s  %s (%u)", ipv6_icon, ip->address, ip->type, ip->scope_id);
+          snprintf(line, sizeof(line), "%s  %s  %s (%u)", ipv6_icon,
+                   ip->address, ip->type, ip->scope_id);
         } else {
-          snprintf(line, sizeof(line), "%s  %s  %s", ipv6_icon, ip->address, ip->type);
+          snprintf(line, sizeof(line), "%s  %s  %s", ipv6_icon, ip->address,
+                   ip->type);
         }
         print_box_line(width, line);
       }
@@ -806,7 +855,8 @@ static void terminal_print_verbose_network(const Network *net, int width) {
   print_box_bottom(width);
 }
 
-static void __attribute__((unused)) terminal_print_compact_network(const Network *net) {
+static void __attribute__((unused))
+terminal_print_compact_network(const Network *net) {
   const Wireless *wire = net->wire;
   const char *status = get_interface_status_str(wire);
   const char *iface_icon = get_interface_icon(wire->name);
@@ -835,7 +885,8 @@ static void __attribute__((unused)) terminal_print_compact_network(const Network
   if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6) {
     for (size_t j = 0; j < net->addresses_ipv6->size; j++) {
       const IPv6 *ip = &net->addresses_ipv6->data[j];
-      if (!should_show_ipv6_type(ip->type) || !should_show_ipv6_scope(ip->scope_id))
+      if (!should_show_ipv6_type(ip->type) ||
+          !should_show_ipv6_scope(ip->scope_id))
         continue;
       const char *icon = get_ipv6_icon(ip);
       printf("  %s %s", icon, ip->address);
@@ -844,7 +895,8 @@ static void __attribute__((unused)) terminal_print_compact_network(const Network
   printf("\n");
 }
 
-static void __attribute__((unused)) terminal_print_minimal_network(const Network *net) {
+static void __attribute__((unused))
+terminal_print_minimal_network(const Network *net) {
   const Wireless *wire = net->wire;
   const char *iface_icon = get_interface_icon(wire->name);
   const char *signal_icon = get_signal_icon(wire->noise);
@@ -872,7 +924,8 @@ static void __attribute__((unused)) terminal_print_minimal_network(const Network
   if (OUTPUT_SHOW_IPV6 && net->addresses_ipv6) {
     for (size_t j = 0; j < net->addresses_ipv6->size; j++) {
       const IPv6 *ip = &net->addresses_ipv6->data[j];
-      if (!should_show_ipv6_type(ip->type) || !should_show_ipv6_scope(ip->scope_id))
+      if (!should_show_ipv6_type(ip->type) ||
+          !should_show_ipv6_scope(ip->scope_id))
         continue;
       const char *icon = get_ipv6_icon(ip);
       printf("  %s %s", icon, ip->address);

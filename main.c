@@ -27,7 +27,7 @@ int main(void) {
     return 1;
   }
 
-  #if OUTPUT_FORMAT_TERMINAL
+#if OUTPUT_FORMAT_TERMINAL
   vec_networks_terminal_output(ptr_networks);
 #else
   vec_networks_json_output(ptr_networks);
