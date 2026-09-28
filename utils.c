@@ -550,6 +550,9 @@ static int json_print_signal_object(const Wireless *wire, const char *indent, co
     printf("%s%s%s%s\"noise_dbm\": %.1f", indent, indent, indent, indent, wire->noise);
     printed_field = 1;
   }
+  if (newline[0] != '\0') {
+    printf("%s", newline);
+  }
   printf("%s%s%s}%s", indent, indent, indent, newline);
   return printed_field;
 }
@@ -622,6 +625,9 @@ static int json_print_ip_object(const Network *net, const char *indent, const ch
     json_print_ipv6_array(net->addresses_ipv6, indent, newline);
   }
   if (printed) {
+    if (newline[0] != '\0') {
+      printf("%s", newline);
+    }
     printf("%s%s%s}%s", indent, indent, indent, newline);
   }
   return printed;
