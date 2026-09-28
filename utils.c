@@ -1,7 +1,9 @@
 #include "utils.h"
-#include <stdio.h>
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
+
+#include "config.h"
 
 VECTOR_DEFINE(char, Char, char)
 VECTOR_DEFINE(Wireless, Wirelesses, wirelesses)
@@ -39,8 +41,8 @@ Wireless get_wire_iface(const char *row) {
   Wireless wire = {0};
   if (!row)
     return wire;
-  int parsed = sscanf(row, " %63[^:]: %4s %f %f %f", wire.name, wire.status, &wire.link,
-         &wire.level, &wire.noise);
+  int parsed = sscanf(row, " %63[^:]: %4s %f %f %f", wire.name, wire.status,
+                      &wire.link, &wire.level, &wire.noise);
   if (parsed != 5) {
     return (Wireless){0};
   }
@@ -72,7 +74,8 @@ VecWirelesses *get_all_wire_ifaces(FILE *file) {
     VecChar *row = slice_char(line, (size_t)n_bytes - 1);
     if (!row || !row->data) {
       fprintf(stderr, "Slice char failed for line: %s\n", line);
-      if (row) vec_free_char(row);
+      if (row)
+        vec_free_char(row);
       continue;
     }
     Wireless wire = get_wire_iface(row->data);
@@ -98,6 +101,105 @@ cleanup:
     wirelesses = NULL;
   }
   return wirelesses;
+}
+
+const char *get_signal_quality(float noise) {
+  for (size_t i = 0; i < SIGNAL_LEVEL_COUNT; i++) {
+    if (noise < signal_levels[i].threshold) {
+      return signal_levels[i].label;
+    }
+  }
+  return signal_levels[SIGNAL_LEVEL_COUNT - 1].label;
+}
+
+const char *get_signal_icon(float noise) {
+  for (size_t i = 0; i < SIGNAL_LEVEL_COUNT; i++) {
+    if (noise < signal_levels[i].threshold) {
+      return signal_levels[i].icon;
+    }
+  }
+  return signal_levels[SIGNAL_LEVEL_COUNT - 1].icon;
+}
+
+const char *get_signal_color(float noise) {
+  for (size_t i = 0; i < SIGNAL_LEVEL_COUNT; i++) {
+    if (noise < signal_levels[i].threshold) {
+      return signal_levels[i].color;
+    }
+  }
+  return signal_levels[SIGNAL_LEVEL_COUNT - 1].color;
+}
+
+const char *get_interface_icon(const char *iface __attribute__((unused))) {
+#if INTERFACE_ICON_COUNT > 0
+  extern const interface_icon_t interface_icons[];
+  for (size_t i = 0; i < INTERFACE_ICON_COUNT; i++) {
+    if (strcmp(iface, interface_icons[i].iface) == 0) {
+      return interface_icons[i].icon;
+    }
+  }
+#endif
+  return DEFAULT_INTERFACE_ICON;
+}
+
+const char *get_interface_icon_color(const char *iface __attribute__((unused))) {
+#if INTERFACE_ICON_COUNT > 0
+  extern const interface_icon_t interface_icons[];
+  for (size_t i = 0; i < INTERFACE_ICON_COUNT; i++) {
+    if (strcmp(iface, interface_icons[i].iface) == 0) {
+      return interface_icons[i].color ? interface_icons[i].color : DEFAULT_INTERFACE_ICON_COLOR;
+    }
+  }
+#endif
+  return DEFAULT_INTERFACE_ICON_COLOR;
+}
+
+const char *get_link_icon(int link __attribute__((unused))) {
+#if LINK_ICON_COUNT > 0
+  extern const link_icon_t link_icons[];
+  for (size_t i = 0; i < LINK_ICON_COUNT; i++) {
+    if (link >= link_icons[i].threshold) {
+      return link_icons[i].icon;
+    }
+  }
+#endif
+  return DEFAULT_LINK_ICON;
+}
+
+const char *get_link_icon_color(int link __attribute__((unused))) {
+#if LINK_ICON_COUNT > 0
+  extern const link_icon_t link_icons[];
+  for (size_t i = 0; i < LINK_ICON_COUNT; i++) {
+    if (link >= link_icons[i].threshold) {
+      return link_icons[i].color ? link_icons[i].color : DEFAULT_LINK_ICON_COLOR;
+    }
+  }
+#endif
+  return DEFAULT_LINK_ICON_COLOR;
+}
+
+const char *get_level_icon(float level __attribute__((unused))) {
+#if LEVEL_ICON_COUNT > 0
+  extern const level_icon_t level_icons[];
+  for (size_t i = 0; i < LEVEL_ICON_COUNT; i++) {
+    if (level >= level_icons[i].threshold) {
+      return level_icons[i].icon;
+    }
+  }
+#endif
+  return DEFAULT_LEVEL_ICON;
+}
+
+const char *get_level_icon_color(float level __attribute__((unused))) {
+#if LEVEL_ICON_COUNT > 0
+  extern const level_icon_t level_icons[];
+  for (size_t i = 0; i < LEVEL_ICON_COUNT; i++) {
+    if (level >= level_icons[i].threshold) {
+      return level_icons[i].color ? level_icons[i].color : DEFAULT_LEVEL_ICON_COLOR;
+    }
+  }
+#endif
+  return DEFAULT_LEVEL_ICON_COLOR;
 }
 
 Network *network_init() {
@@ -305,56 +407,92 @@ int get_addr(VecNetwork *networks) {
 }
 
 void vec_networks_json_output(VecNetwork *networks) {
-  printf("{\n");
-  printf("\t\"networks\": [\n");
+  const char *indent = JSON_OUTPUT_COMPACT ? "" : "\t";
+  const char *newline = JSON_OUTPUT_COMPACT ? "" : "\n";
+
+  printf("{%s", newline);
+  printf("%s\"networks\": [%s", indent, newline);
   for (size_t i = 0; i < networks->size; i++) {
-    printf("\t\t{\n");
-    printf("\t\t\t\"interface\": \"%s\",\n", networks->data[i].wire->name);
-    printf("\t\t\t\"status\": \"%s\",\n", networks->data[i].wire->status);
-    printf("\t\t\t\"level\": %f,\n", networks->data[i].wire->level);
-    printf("\t\t\t\"link\": %f,\n", networks->data[i].wire->link);
-    printf("\t\t\t\"noise\": %f,\n", networks->data[i].wire->noise);
-    printf("\t\t\t\"ip-addresses\": {\n");
-    printf("\t\t\t\t\"IPv4\": [");
+    const Wireless *wire = networks->data[i].wire;
+    const char *quality = get_signal_quality(wire->noise);
+
+    printf("%s%s{%s", indent, indent, newline);
+    printf("%s%s%s\"interface\": \"%s\",%s", indent, indent, indent, wire->name,
+           newline);
+#if JSON_OUTPUT_ICONS
+    const char *iface_icon = get_interface_icon(wire->name);
+    const char *iface_icon_color = get_interface_icon_color(wire->name);
+    const char *link_icon = get_link_icon((int)wire->link);
+    const char *link_icon_color = get_link_icon_color((int)wire->link);
+    const char *level_icon = get_level_icon(wire->level);
+    const char *level_icon_color = get_level_icon_color(wire->level);
+    printf("%s%s%s%s\"interface_icon\": \"%s\",%s", indent, indent, indent, indent,
+           iface_icon, newline);
+    printf("%s%s%s%s\"interface_icon_color\": \"%s\",%s", indent, indent, indent, indent,
+           iface_icon_color ? iface_icon_color : "", newline);
+#endif
+    printf("%s%s%s\"signal\": {%s", indent, indent, indent, newline);
+    printf("%s%s%s%s\"quality\": \"%s\",%s", indent, indent, indent, indent,
+           quality, newline);
+#if JSON_OUTPUT_ICONS
+    const char *icon = get_signal_icon(wire->noise);
+    printf("%s%s%s%s\"icon\": \"%s\",%s", indent, indent, indent, indent, icon,
+           newline);
+    printf("%s%s%s%s\"link_icon\": \"%s\",%s", indent, indent, indent, indent,
+           link_icon, newline);
+    printf("%s%s%s%s\"link_icon_color\": \"%s\",%s", indent, indent, indent, indent,
+           link_icon_color ? link_icon_color : "", newline);
+    printf("%s%s%s%s\"level_icon\": \"%s\",%s", indent, indent, indent, indent,
+           level_icon, newline);
+    printf("%s%s%s%s\"level_icon_color\": \"%s\",%s", indent, indent, indent, indent,
+           level_icon_color ? level_icon_color : "", newline);
+#endif
+    printf("%s%s%s%s\"level_dbm\": %.1f,%s", indent, indent, indent, indent,
+           wire->level, newline);
+    printf("%s%s%s%s\"link\": %.1f,%s", indent, indent, indent, indent,
+           wire->link, newline);
+    printf("%s%s%s%s\"noise_dbm\": %.1f%s", indent, indent, indent, indent,
+           wire->noise, newline);
+    printf("%s%s%s},%s", indent, indent, indent, newline);
+    printf("%s%s%s\"ip\": {%s", indent, indent, indent, newline);
+    printf("%s%s%s%s\"ipv4\": [%s", indent, indent, indent, indent, newline);
+
     if (networks->data[i].addresses_ipv4->size != 0) {
-      printf("\n");
       for (size_t j = 0; j < networks->data[i].addresses_ipv4->size; j++) {
-        printf("\t\t\t\t\t\"%s\"",
-               networks->data[i].addresses_ipv4->data[j].address);
-        if (j + 1 < networks->data[i].addresses_ipv4->size) {
-          printf(",");
-        }
-        printf("\n");
+        printf("%s%s%s%s%s\"%s\"%s", indent, indent, indent, indent, indent,
+               networks->data[i].addresses_ipv4->data[j].address,
+               (j + 1 < networks->data[i].addresses_ipv4->size) ? "," : "");
+        printf("%s", newline);
       }
-      printf("\t\t\t\t]");
+      printf("%s%s%s%s]", indent, indent, indent, indent);
     } else {
-      printf("]");
+      printf("%s%s%s%s]", indent, indent, indent, indent);
     }
-    printf(",\n");
-    printf("\t\t\t\t\"IPv6\": [");
+    printf(",%s", newline);
+    printf("%s%s%s%s\"ipv6\": [%s", indent, indent, indent, indent, newline);
+
     if (networks->data[i].addresses_ipv6->size != 0) {
-      printf("\n");
       for (size_t j = 0; j < networks->data[i].addresses_ipv6->size; j++) {
-        printf("\t\t\t\t\t{\"address\": \"%s\", \"type\": \"%s\", \"scope_id\": %u}",
+        printf("%s%s%s%s%s{\"address\": \"%s\", \"type\": \"%s\", "
+               "\"scope_id\": %u}%s",
+               indent, indent, indent, indent, indent,
                networks->data[i].addresses_ipv6->data[j].address,
                networks->data[i].addresses_ipv6->data[j].type,
-               networks->data[i].addresses_ipv6->data[j].scope_id);
-        if (j + 1 < networks->data[i].addresses_ipv6->size) {
-          printf(",");
-        }
-        printf("\n");
+               networks->data[i].addresses_ipv6->data[j].scope_id,
+               (j + 1 < networks->data[i].addresses_ipv6->size) ? "," : "");
+        printf("%s", newline);
       }
-      printf("\t\t\t\t]");
+      printf("%s%s%s%s]%s", indent, indent, indent, indent, newline);
     } else {
-      printf("]");
+      printf("%s%s%s%s]%s", indent, indent, indent, indent, newline);
     }
-    printf("\n\t\t\t}\n");
-    printf("\t\t}");
+    printf("%s%s%s}%s", indent, indent, indent, newline);
     if (i + 1 < networks->size) {
-      printf(",");
+      printf("%s%s},%s", indent, indent, newline);
+    } else {
+      printf("%s%s}%s", indent, indent, newline);
     }
-    printf("\n");
   }
-  printf("\t]\n");
-  printf("}\n");
+  printf("%s]%s", indent, newline);
+  printf("}%s", newline);
 }

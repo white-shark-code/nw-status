@@ -64,6 +64,19 @@ ssize_t check_exist_wire(struct ifaddrs *ifa, VecNetwork *networks);
 int get_addr(VecNetwork *networks);
 void vec_networks_json_output(VecNetwork *networks);
 
+/* Signal quality functions */
+const char *get_signal_quality(float noise);
+const char *get_signal_icon(float noise);
+const char *get_signal_color(float noise);
+
+/* Interface/Link/Level icons */
+const char *get_interface_icon(const char *iface);
+const char *get_interface_icon_color(const char *iface);
+const char *get_link_icon(int link);
+const char *get_link_icon_color(int link);
+const char *get_level_icon(float level);
+const char *get_level_icon_color(float level);
+
 /* Конструкторы/деструкторы */
 Network *network_init();
 Network *network_init_with_capacity(size_t capacity);
