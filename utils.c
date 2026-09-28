@@ -688,6 +688,9 @@ static void json_print_network(const Network *net, const char *indent,
 }
 
 void vec_networks_json_output(VecNetwork *networks) {
+  if (!networks) {
+    return;
+  }
   const char *indent = JSON_OUTPUT_COMPACT ? "" : "\t";
   const char *newline = JSON_OUTPUT_COMPACT ? "" : "\n";
 

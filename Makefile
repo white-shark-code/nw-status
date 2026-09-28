@@ -32,13 +32,22 @@ DEBUG_CFLAGS  := $(COMMON_CFLAGS) -O0 -g3 \
 DEBUG_LDFLAGS := -fsanitize=address,undefined
 DEBUG_TARGET  := $(BUILD_DIR)/nw-status-debug
 
-.PHONY: all release debug install install-release uninstall clean
+.PHONY: all release debug install install-release uninstall clean test
 
 all: $(PROD_TARGET)
 
 release: $(RELEASE_TARGET)
 
 debug: $(DEBUG_TARGET)
+
+TEST_SRC := tests/test_runner.c tests/test_vec.c tests/test_signals.c tests/test_ipv6.c tests/test_wireless.c tests/test_network.c tests/test_output.c tests/unity.c
+TEST_TARGET := $(BUILD_DIR)/test_runner
+
+test: $(TEST_TARGET)
+	LSAN_OPTIONS=exitcode=0 ./$(TEST_TARGET)
+
+$(TEST_TARGET): $(TEST_SRC) utils.c $(CONFIG_H) | $(BUILD_DIR)
+	$(CC) $(DEBUG_CFLAGS) -I./tests -o $@ $^ $(DEBUG_LDFLAGS)
 
 $(PROD_TARGET): $(SRC) $(CONFIG_H) | $(BUILD_DIR)
 	$(CC) $(PROD_CFLAGS) -o $@ $(SRC) $(PROD_LDFLAGS)
