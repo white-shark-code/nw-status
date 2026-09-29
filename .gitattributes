@@ -1,0 +1,7 @@
+# Unity test framework is vendored third-party code: exclude from language stats
+tests/unity.c linguist-vendored
+tests/unity.h linguist-vendored
+tests/unity_internals.h linguist-vendored
+
+# All project headers are C, not C++
+*.h linguist-language=C
