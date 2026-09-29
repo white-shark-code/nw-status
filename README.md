@@ -244,13 +244,13 @@ The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`,
 ### Terminal verbose (`OUTPUT_FORMAT_TERMINAL=1`, `TERMINAL_STYLE=1`)
 
 ```
-  +------------------- 󰖩 MyNetwork (wlan0, UP) -------------------+
+  +----------------- 󰖩 MyNetwork (wlan0, UP) ------------------+
   | 󰤨 EXCELLENT 󰇧 Link: 70%  󰤢 Noise: n/a                      |
   | 󰤢 Level:  -35.0 dBm                                        |
   +--------------------------- IPv4 ---------------------------+
   | 󰈀  192.168.1.4                                             |
   +--------------------------- IPv6 ---------------------------+
-  | 󰀄  2001:ee0:5493:60f0::/64  global                          |
+  | 󰀄  2001:ee0:5493:60f0::1  global                           |
   | 󰣇  fe80::a127:2e9e:5071:fd10  link-local (3)               |
   +------------------------------------------------------------+
 ```
@@ -258,13 +258,13 @@ The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`,
 ### Terminal compact (`TERMINAL_STYLE=0`)
 
 ```
-  󰖩 wlan0 (UP)  MyNetwork  󰤨 -35.0dBm  󰇧70%  󰤢 n/a  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
+  󰖩 wlan0 (UP)  MyNetwork  󰤨 -35.0dBm  󰇧70%  󰤢 n/a  󰈀 192.168.1.4  󰀄 2001:ee0:5493:60f0::1  󰣇 fe80::a127:2e9e:5071:fd10
 ```
 
 ### Terminal minimal (`TERMINAL_STYLE=2`)
 
 ```
-  󰖩 wlan0  MyNetwork  󰤨  󰇧  󰤢  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
+  󰖩 wlan0  MyNetwork  󰤨  󰇧  󰤢  󰈀 192.168.1.4  󰀄 2001:ee0:5493:60f0::1  󰣇 fe80::a127:2e9e:5071:fd10
 ```
 
 ### Terminal detailed (`TERMINAL_STYLE=3`, default)
@@ -279,7 +279,7 @@ Respects `OUTPUT_SHOW_*` and the IPv6 filters.
     ipv4:
       󰈀 192.168.1.4
     ipv6:
-      󰀄 2001:ee0:5493:60f0::/64 (global)
+      󰀄 2001:ee0:5493:60f0::1 (global)
       󰣇 fe80::a127:2e9e:5071:fd10 (link-local, scope 3)
 ```
 
