@@ -16,22 +16,21 @@ typedef struct {
 #define DEFAULT_INTERFACE_ICON "󰖩"
 #define DEFAULT_INTERFACE_ICON_COLOR "#ffffff"
 
-/* Per-interface icon overrides (uncomment and customize):
- * #if 0
- * static const interface_icon_t interface_icons[] = {
- *     { "wlan0", "󰖩", "#00ffff" },
- *     { "eth0",  "󰈀", "#00ff00" },
- * };
- * #endif
- */
+/* Per-interface icons (exact name match, edit to customize) */
+static const interface_icon_t interface_icons[] = {
+    {"wlan0", "󰖩", "#00ffff"},
+    {"wlan1", "󰖩", "#00ffff"},
+    {"eth0", "󰈀", "#00ff00"},
+};
 
-/* Number of custom interface icons (0 = use default for all) */
-#define INTERFACE_ICON_COUNT 0
+/* Number of per-interface icons (keep in sync with the table above) */
+#define INTERFACE_ICON_COUNT 3
 
 /* ===== Link quality icons ===== */
 typedef struct {
   int threshold;     /* Link quality threshold (0-100). Higher = better.
-                        Array ordered from worst to best (ascending thresholds). */
+                        Array ordered from best to worst (descending thresholds):
+                        first entry with link >= threshold wins. */
   const char *icon;  /* Nerd Font icon */
   const char *color; /* Optional: hex color or NULL */
 } link_icon_t;
@@ -40,24 +39,22 @@ typedef struct {
 #define DEFAULT_LINK_ICON "󰇧"
 #define DEFAULT_LINK_ICON_COLOR "#ffffff"
 
-/* Per-link quality icons (uncomment and customize):
- * #if 0
- * static const link_icon_t link_icons[] = {
- *     { 70, "󰇧", "#00ff00" },  // good
- *     { 40, "󰇨", "#ffff00" },  // medium
- *     { 0,  "󰇦", "#ff0000" },  // poor
- * };
- * #endif
- */
+/* Link quality icons by threshold */
+static const link_icon_t link_icons[] = {
+    {70, "󰇧", "#00ff00"}, /* good */
+    {40, "󰇨", "#ffff00"}, /* medium */
+    {0, "󰇦", "#ff0000"},  /* poor */
+};
 
-/* Number of custom link icons (0 = use default for all) */
-#define LINK_ICON_COUNT 0
+/* Number of link quality icons (keep in sync with the table above) */
+#define LINK_ICON_COUNT 3
 
 /* ===== Signal level icons ===== */
 typedef struct {
   float
       threshold;     /* Signal level threshold in dBm. Higher = better.
-                        Array ordered from worst to best (ascending thresholds). */
+                        Array ordered from best to worst (descending thresholds):
+                        first entry with level >= threshold wins. */
   const char *icon;  /* Nerd Font icon */
   const char *color; /* Optional: hex color or NULL */
 } level_icon_t;
@@ -66,35 +63,35 @@ typedef struct {
 #define DEFAULT_LEVEL_ICON "󰤟"
 #define DEFAULT_LEVEL_ICON_COLOR "#ffffff"
 
-/* Per-level icons (uncomment and customize):
- * #if 0
- * static const level_icon_t level_icons[] = {
- *     { -80.0f, "󰤯", "#ff0000" },
- *     { -60.0f, "󰤟", "#ffff00" },
- *     { -40.0f, "󰤢", "#00ff00" },
- *     { -30.0f, "󰤨", "#00ff00" },
- * };
- * #endif
- */
+/* Signal level icons by threshold */
+static const level_icon_t level_icons[] = {
+    {-30.0f, "󰤨", "#00ff00"}, /* excellent */
+    {-50.0f, "󰤢", "#aaff00"}, /* good */
+    {-65.0f, "󰤟", "#ffff00"}, /* fair */
+    {-80.0f, "󰤯", "#ff5500"}, /* weak */
+};
 
-/* Number of custom level icons (0 = use default for all) */
-#define LEVEL_ICON_COUNT 0
+/* Number of signal level icons (keep in sync with the table above) */
+#define LEVEL_ICON_COUNT 4
 
 /* ===== Signal quality levels ===== */
 typedef struct {
   float
-      threshold;     /* Noise threshold in dBm (float). Lower = better.
+      threshold;     /* Signal level threshold in dBm (float). Higher = better.
                         Array ordered from worst to best (ascending thresholds). */
   const char *label; /* Text label: "LOW", "MEDIUM", "HIGH", etc. */
   const char *icon;  /* Nerd Font icon: "󰤯", "󰤟", "󰤨" */
   const char *color; /* Optional: hex color "#ff0000" or NULL */
 } signal_level_t;
 
-/* Signal levels - worst to best */
+/* Signal levels - worst to best (ascending thresholds:
+   first entry with level < threshold wins) */
 static const signal_level_t signal_levels[] = {
-    {-70.0f, "LOW", "󰤯", "#ff0000"},
-    {-50.0f, "MEDIUM", "󰤟", "#ffff00"},
-    {-30.0f, "HIGH", "󰤨", "#00ff00"},
+    {-80.0f, "CRITICAL", "󰤮", "#ff0000"},
+    {-70.0f, "LOW", "󰤯", "#ff5500"},
+    {-60.0f, "FAIR", "󰤟", "#ffff00"},
+    {-50.0f, "GOOD", "󰤢", "#aaff00"},
+    {-30.0f, "EXCELLENT", "󰤨", "#00ff00"},
 };
 
 #define SIGNAL_LEVEL_COUNT (sizeof(signal_levels) / sizeof(signal_levels[0]))

@@ -86,7 +86,7 @@ $EDITOR config.h
 | `OUTPUT_SHOW_INTERFACE_STATUS` | UP/DOWN status |
 | `OUTPUT_SHOW_LINK_QUALITY` | Link quality % |
 | `OUTPUT_SHOW_SIGNAL_LEVEL` | Signal level (dBm) |
-| `OUTPUT_SHOW_NOISE_LEVEL` | Noise level (dBm) |
+| `OUTPUT_SHOW_NOISE_LEVEL` | Noise level (dBm, `n/a`/`null` if unavailable) |
 | `OUTPUT_SHOW_IPV4` | IPv4 addresses |
 | `OUTPUT_SHOW_IPV6` | IPv6 addresses |
 | `OUTPUT_SHOW_SSID` | SSID (wireless network name, JSON `ssid` field) |
@@ -128,25 +128,28 @@ $EDITOR config.h
 #define IPV6_ICON_ULA "󰖩"
 #define IPV6_ICON_GLOBAL "󰀄"
 
-// Signal quality levels (per-level icons/colors)
+// Signal quality levels, worst to best (first entry with level < threshold wins)
 static const signal_level_t signal_levels[] = {
-    { -70.0f, "LOW",    "󰤯", "#ff0000" },
-    { -50.0f, "MEDIUM", "󰤟", "#ffff00" },
-    { -30.0f, "HIGH",   "󰤨", "#00ff00" },
+    { -80.0f, "CRITICAL",  "󰤮", "#ff0000" },
+    { -70.0f, "LOW",       "󰤯", "#ff5500" },
+    { -60.0f, "FAIR",      "󰤟", "#ffff00" },
+    { -50.0f, "GOOD",      "󰤢", "#aaff00" },
+    { -30.0f, "EXCELLENT", "󰤨", "#00ff00" },
 };
 ```
 
-### Per-Interface/Link/Level Overrides (uncomment in config.h)
+### Per-Interface/Link/Level Tables (defaults in config.def.h, edit to customize)
 
 ```c
-// Interface-specific icons
+// Interface-specific icons (exact name match)
 static const interface_icon_t interface_icons[] = {
     { "wlan0", "󰖩", "#00ffff" },
+    { "wlan1", "󰖩", "#00ffff" },
     { "eth0",  "󰈀", "#00ff00" },
 };
-#define INTERFACE_ICON_COUNT 2
+#define INTERFACE_ICON_COUNT 3
 
-// Link quality thresholds
+// Link quality thresholds, best to worst (first entry with link >= threshold wins)
 static const link_icon_t link_icons[] = {
     { 70, "󰇧", "#00ff00" },  // good
     { 40, "󰇨", "#ffff00" },  // medium
@@ -154,12 +157,12 @@ static const link_icon_t link_icons[] = {
 };
 #define LINK_ICON_COUNT 3
 
-// Signal level thresholds
+// Signal level thresholds, best to worst (first entry with level >= threshold wins)
 static const level_icon_t level_icons[] = {
-    { -80.0f, "󰤯", "#ff0000" },
-    { -60.0f, "󰤟", "#ffff00" },
-    { -40.0f, "󰤢", "#00ff00" },
-    { -30.0f, "󰤨", "#00ff00" },
+    { -30.0f, "󰤨", "#00ff00" },  // excellent
+    { -50.0f, "󰤢", "#aaff00" },  // good
+    { -65.0f, "󰤟", "#ffff00" },  // fair
+    { -80.0f, "󰤯", "#ff5500" },  // weak
 };
 #define LEVEL_ICON_COUNT 4
 ```
@@ -194,10 +197,10 @@ The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`,
             "interface": "wlan0",
             "ssid": "MyNetwork",
             "signal": {
-                "quality": "LOW",
+                "quality": "EXCELLENT",
                 "level_dbm": -35.0,
                 "link": 70.0,
-                "noise_dbm": -256.0
+                "noise_dbm": null
             },
             "ip": {
                 "ipv4": ["192.168.1.4"],
@@ -220,15 +223,15 @@ The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`,
     "interface_icon": "󰖩",
     "interface_icon_color": "#ffffff",
     "signal": {
-        "quality": "LOW",
-        "icon": "󰤯",
+        "quality": "EXCELLENT",
+        "icon": "󰤨",
         "link_icon": "󰇧",
         "link_icon_color": "#ffffff",
         "level_icon": "󰤟",
         "level_icon_color": "#ffffff",
         "level_dbm": -35.0,
         "link": 70.0,
-        "noise_dbm": -256.0
+        "noise_dbm": null
     }
 }
 ```
@@ -236,9 +239,9 @@ The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`,
 ### Terminal verbose (`OUTPUT_FORMAT_TERMINAL=1`, `TERMINAL_STYLE=1`)
 
 ```
-  +----------------------- 󰖩 wlan0 (UP) -----------------------+
-  | 󰤯 LOW 󰇧 Link: 70%  󰤟 Noise: -256dBm                        |
-  | 󰤟 Level:  -35.0 dBm                                        |
+  +------------------- 󰖩 MyNetwork (wlan0, UP) -------------------+
+  | 󰤨 EXCELLENT 󰇧 Link: 70%  󰤢 Noise: n/a                      |
+  | 󰤢 Level:  -35.0 dBm                                        |
   +--------------------------- IPv4 ---------------------------+
   | 󰈀  192.168.1.4                                             |
   +--------------------------- IPv6 ---------------------------+
@@ -250,13 +253,13 @@ The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`,
 ### Terminal compact (`TERMINAL_STYLE=0`)
 
 ```
-  󰖩 wlan0 (UP)  󰤯 -35.0dBm  󰇧70%  󰤟-256dBm  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
+  󰖩 wlan0 (UP)  MyNetwork  󰤨 -35.0dBm  󰇧70%  󰤢 n/a  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
 ```
 
 ### Terminal minimal (`TERMINAL_STYLE=2`)
 
 ```
-  󰖩 wlan0  󰤯  󰇧  󰤟  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
+  󰖩 wlan0  MyNetwork  󰤨  󰇧  󰤢  󰈀 192.168.1.4  󰀄 2001:ee0::/64  󰣇 fe80::/64
 ```
 
 ### Terminal detailed (`TERMINAL_STYLE=3`, default)
@@ -266,8 +269,13 @@ Respects `OUTPUT_SHOW_*` and the IPv6 filters.
 
 ```
 󰤨 MyNetwork (wlan0)
-UP level -35.0 dBm link 70% noise -256 dBm
-ip-addresses: 󰈀 192.168.1.4 󰀄 2001:ee0::/64 󰣇 fe80::/64
+  UP  level -35.0 dBm  link 70%  noise n/a
+  ip-addresses:
+    ipv4:
+      󰈀 192.168.1.4
+    ipv6:
+      󰀄 2001:ee0:5493:60f0::/64 (global)
+      󰣇 fe80::a127:2e9e:5071:fd10 (link-local, scope 3)
 ```
 
 ### Short output (`--short` / `-s`)
@@ -287,7 +295,7 @@ Empty or unavailable SSID is shown as `noname`.
 | `ssid` | Wireless network name (via `ioctl(SIOCGIWESSID)`; `noname` if empty/unavailable; hidden if `OUTPUT_SHOW_SSID=0`; quotes escaped in JSON) |
 | `interface_icon` | Nerd Font icon (if `JSON_OUTPUT_ICONS=1`) |
 | `interface_icon_color` | Hex color (if `JSON_OUTPUT_ICONS=1`) |
-| `signal.quality` | Quality label: LOW/MEDIUM/HIGH |
+| `signal.quality` | Quality label: CRITICAL/LOW/FAIR/GOOD/EXCELLENT |
 | `signal.icon` | Quality icon (if `JSON_OUTPUT_ICONS=1`) |
 | `signal.link_icon` | Link quality icon (if `JSON_OUTPUT_ICONS=1`) |
 | `signal.link_icon_color` | Link icon color (if `JSON_OUTPUT_ICONS=1`) |
@@ -295,7 +303,7 @@ Empty or unavailable SSID is shown as `noname`.
 | `signal.level_icon_color` | Level icon color (if `JSON_OUTPUT_ICONS=1`) |
 | `signal.level_dbm` | Signal level in dBm |
 | `signal.link` | Link quality (0-100) |
-| `signal.noise_dbm` | Noise level in dBm |
+| `signal.noise_dbm` | Noise level in dBm, `null` if the driver doesn't report it |
 | `ip.ipv4[]` | IPv4 addresses |
 | `ip.ipv6[].address` | IPv6 address |
 | `ip.ipv6[].type` | global/link-local/multicast/ULA |

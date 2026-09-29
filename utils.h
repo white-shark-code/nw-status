@@ -11,6 +11,11 @@
 
 #define STATIC_PATH_PROC_WIRELES "/proc/net/wireless"
 
+/* Noise below this is treated as "driver didn't report noise" (/proc gives -256) */
+#define NOISE_UNAVAILABLE_THRESHOLD -200.0f
+
+int is_noise_available(float noise);
+
 #ifndef IN6_IS_ADDR_ULA
 #define IN6_IS_ADDR_ULA(a) (((a)->s6_addr[0] & 0xfe) == 0xfc) /* RFC 4193 */
 #endif
@@ -70,10 +75,10 @@ void enrich_networks_with_ssid(VecNetwork *networks);
 int get_addr(VecNetwork *networks);
 void vec_networks_json_output(VecNetwork *networks);
 
-/* Signal quality functions */
-const char *get_signal_quality(float noise);
-const char *get_signal_icon(float noise);
-const char *get_signal_color(float noise);
+/* Signal quality functions (classified by signal level in dBm) */
+const char *get_signal_quality(float level);
+const char *get_signal_icon(float level);
+const char *get_signal_color(float level);
 
 /* Interface/Link/Level icons */
 const char *get_interface_icon(const char *iface);

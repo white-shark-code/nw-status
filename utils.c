@@ -174,27 +174,31 @@ cleanup:
   return wirelesses;
 }
 
-const char *get_signal_quality(float noise) {
+int is_noise_available(float noise) {
+  return noise > NOISE_UNAVAILABLE_THRESHOLD;
+}
+
+const char *get_signal_quality(float level) {
   for (size_t i = 0; i < SIGNAL_LEVEL_COUNT; i++) {
-    if (noise < signal_levels[i].threshold) {
+    if (level < signal_levels[i].threshold) {
       return signal_levels[i].label;
     }
   }
   return signal_levels[SIGNAL_LEVEL_COUNT - 1].label;
 }
 
-const char *get_signal_icon(float noise) {
+const char *get_signal_icon(float level) {
   for (size_t i = 0; i < SIGNAL_LEVEL_COUNT; i++) {
-    if (noise < signal_levels[i].threshold) {
+    if (level < signal_levels[i].threshold) {
       return signal_levels[i].icon;
     }
   }
   return signal_levels[SIGNAL_LEVEL_COUNT - 1].icon;
 }
 
-const char *get_signal_color(float noise) {
+const char *get_signal_color(float level) {
   for (size_t i = 0; i < SIGNAL_LEVEL_COUNT; i++) {
-    if (noise < signal_levels[i].threshold) {
+    if (level < signal_levels[i].threshold) {
       return signal_levels[i].color;
     }
   }
@@ -610,7 +614,7 @@ static int json_print_interface_field(const Wireless *wire, const char *indent,
 
 static int json_print_signal_object(const Wireless *wire, const char *indent,
                                     const char *newline) {
-  const char *quality = get_signal_quality(wire->noise);
+  const char *quality = get_signal_quality(wire->level);
   int printed_field = 0;
 
   printf("%s%s%s\"signal\": {%s", indent, indent, indent, newline);
@@ -624,7 +628,7 @@ static int json_print_signal_object(const Wireless *wire, const char *indent,
   }
 #if JSON_OUTPUT_ICONS
   if (OUTPUT_SHOW_LINK_QUALITY) {
-    const char *icon = get_signal_icon(wire->noise);
+    const char *icon = get_signal_icon(wire->level);
     const char *link_icon = get_link_icon((int)wire->link);
     const char *link_icon_color = get_link_icon_color((int)wire->link);
     const char *level_icon = get_level_icon(wire->level);
@@ -667,7 +671,7 @@ static int json_print_signal_object(const Wireless *wire, const char *indent,
     printed_field = 1;
   }
   if (OUTPUT_SHOW_SIGNAL_LEVEL) {
-    const char *color = get_signal_color(wire->noise);
+    const char *color = get_signal_color(wire->level);
     if (printed_field)
       printf(",%s", newline);
     printf("%s%s%s%s\"color\": \"%s\"", indent, indent, indent, indent,
@@ -677,8 +681,12 @@ static int json_print_signal_object(const Wireless *wire, const char *indent,
   if (OUTPUT_SHOW_NOISE_LEVEL) {
     if (printed_field)
       printf(",%s", newline);
-    printf("%s%s%s%s\"noise_dbm\": %.1f", indent, indent, indent, indent,
-           wire->noise);
+    if (is_noise_available(wire->noise)) {
+      printf("%s%s%s%s\"noise_dbm\": %.1f", indent, indent, indent, indent,
+             wire->noise);
+    } else {
+      printf("%s%s%s%s\"noise_dbm\": null", indent, indent, indent, indent);
+    }
     printed_field = 1;
   }
   if (newline[0] != '\0') {
@@ -907,8 +915,8 @@ terminal_print_verbose_network(const Network *net, int width) {
   const Wireless *wire = net->wire;
   const char *status = get_interface_status_str(wire);
   const char *iface_icon = get_interface_icon(wire->name);
-  const char *signal_icon = get_signal_icon(wire->noise);
-  const char *quality = get_signal_quality(wire->noise);
+  const char *signal_icon = get_signal_icon(wire->level);
+  const char *quality = get_signal_quality(wire->level);
   const char *link_icon = get_link_icon((int)wire->link);
   const char *level_icon = get_level_icon(wire->level);
 
@@ -933,8 +941,13 @@ terminal_print_verbose_network(const Network *net, int width) {
                               "%s Link: %.0f%%  ", link_icon, wire->link);
     }
     if (OUTPUT_SHOW_NOISE_LEVEL) {
-      pos += (size_t)snprintf(line + pos, sizeof(line) - pos,
-                              "%s Noise: %.0fdBm", level_icon, wire->noise);
+      if (is_noise_available(wire->noise)) {
+        pos += (size_t)snprintf(line + pos, sizeof(line) - pos,
+                                "%s Noise: %.0fdBm", level_icon, wire->noise);
+      } else {
+        pos += (size_t)snprintf(line + pos, sizeof(line) - pos,
+                                "%s Noise: n/a", level_icon);
+      }
     }
     print_box_line(width, line);
 
@@ -994,7 +1007,7 @@ terminal_print_compact_network(const Network *net) {
   const Wireless *wire = net->wire;
   const char *status = get_interface_status_str(wire);
   const char *iface_icon = get_interface_icon(wire->name);
-  const char *signal_icon = get_signal_icon(wire->noise);
+  const char *signal_icon = get_signal_icon(wire->level);
   const char *link_icon = get_link_icon((int)wire->link);
   const char *level_icon = get_level_icon(wire->level);
   const char *ipv4_icon = get_ipv4_icon();
@@ -1012,7 +1025,11 @@ terminal_print_compact_network(const Network *net) {
     printf("  %s%.0f%%", link_icon, wire->link);
   }
   if (OUTPUT_SHOW_NOISE_LEVEL) {
-    printf("  %s%.0fdBm", level_icon, wire->noise);
+    if (is_noise_available(wire->noise)) {
+      printf("  %s%.0fdBm", level_icon, wire->noise);
+    } else {
+      printf("  %s n/a", level_icon);
+    }
   }
 
   if (OUTPUT_SHOW_IPV4 && net->addresses_ipv4) {
@@ -1037,7 +1054,7 @@ static void __attribute__((unused))
 terminal_print_minimal_network(const Network *net) {
   const Wireless *wire = net->wire;
   const char *iface_icon = get_interface_icon(wire->name);
-  const char *signal_icon = get_signal_icon(wire->noise);
+  const char *signal_icon = get_signal_icon(wire->level);
   const char *link_icon = get_link_icon((int)wire->link);
   const char *level_icon = get_level_icon(wire->level);
   const char *ipv4_icon = get_ipv4_icon();
@@ -1081,7 +1098,7 @@ terminal_print_detailed_network(const Network *net) {
   if (!net || !net->wire)
     return;
   const Wireless *wire = net->wire;
-  const char *signal_icon = get_signal_icon(wire->noise);
+  const char *signal_icon = get_signal_icon(wire->level);
   const char *ssid = wire->ssid[0] ? wire->ssid : "noname";
   const char *status = get_interface_status_str(wire);
 
@@ -1097,7 +1114,11 @@ terminal_print_detailed_network(const Network *net) {
     printf("  link %.0f%%", wire->link);
   }
   if (OUTPUT_SHOW_NOISE_LEVEL) {
-    printf("  noise %.1fdBm", wire->noise);
+    if (is_noise_available(wire->noise)) {
+      printf("  noise %.1fdBm", wire->noise);
+    } else {
+      printf("  noise n/a");
+    }
   }
   printf("\n");
 
@@ -1148,7 +1169,7 @@ terminal_print_detailed_network(const Network *net) {
 static void short_print_network(const Network *net) {
   if (!net || !net->wire)
     return;
-  const char *icon = get_signal_icon(net->wire->noise);
+  const char *icon = get_signal_icon(net->wire->level);
   const char *ssid = net->wire->ssid[0] ? net->wire->ssid : "noname";
   printf("%s %s\n", icon, ssid);
 }

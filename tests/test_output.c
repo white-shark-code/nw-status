@@ -281,6 +281,71 @@ void test_short_output_null_guard(void) {
     TEST_ASSERT_EQUAL_STRING("", capture_end());
 }
 
+void test_is_noise_available(void) {
+    TEST_ASSERT_TRUE(is_noise_available(-90.0f));
+    TEST_ASSERT_TRUE(is_noise_available(-50.0f));
+    TEST_ASSERT_FALSE(is_noise_available(-256.0f));
+    TEST_ASSERT_FALSE(is_noise_available(-200.0f));
+}
+
+void test_signal_quality_by_level(void) {
+    /* classification uses signal level now (5-level scale) */
+    TEST_ASSERT_EQUAL_STRING("EXCELLENT", get_signal_quality(-47.0f));
+    TEST_ASSERT_EQUAL_STRING("GOOD", get_signal_quality(-55.0f));
+    TEST_ASSERT_EQUAL_STRING("LOW", get_signal_quality(-80.0f));
+    TEST_ASSERT_EQUAL_STRING("CRITICAL", get_signal_quality(-85.0f));
+    TEST_ASSERT_EQUAL_STRING("󰤨", get_signal_icon(-47.0f));
+}
+
+void test_json_output_noise_null(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -55.0f, -256.0f);
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_json_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "\"noise_dbm\": null") != NULL);
+    TEST_ASSERT_TRUE(strstr(output, "-256") == NULL);
+
+    vec_networks_free(nets);
+}
+
+void test_json_output_noise_value(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -55.0f, -90.0f);
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_json_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "\"noise_dbm\": -90.0") != NULL);
+
+    vec_networks_free(nets);
+}
+
+#if TERMINAL_STYLE == 3
+void test_detailed_output_noise_na(void) {
+    VecNetwork *nets = vec_networks_init();
+    Network *net = create_test_network("wlan0", 50.0f, -47.0f, -256.0f);
+    vec_networks_push(nets, net);
+    free(net);
+
+    capture_start();
+    vec_networks_terminal_output(nets);
+    const char *output = capture_end();
+
+    TEST_ASSERT_TRUE(strstr(output, "n/a") != NULL);
+    TEST_ASSERT_TRUE(strstr(output, "-256") == NULL);
+
+    vec_networks_free(nets);
+}
+#endif
+
 void run_output_tests(void) {
     RUN_TEST(test_json_output_basic);
     RUN_TEST(test_json_output_signal_fields);
@@ -288,6 +353,13 @@ void run_output_tests(void) {
     RUN_TEST(test_json_output_null_networks);
     RUN_TEST(test_json_output_ssid_field);
     RUN_TEST(test_json_output_ssid_fallback);
+    RUN_TEST(test_is_noise_available);
+    RUN_TEST(test_signal_quality_by_level);
+    RUN_TEST(test_json_output_noise_null);
+    RUN_TEST(test_json_output_noise_value);
+#if TERMINAL_STYLE == 3
+    RUN_TEST(test_detailed_output_noise_na);
+#endif
     RUN_TEST(test_terminal_output_verbose_style);
     RUN_TEST(test_terminal_output_empty);
     RUN_TEST(test_terminal_output_null);

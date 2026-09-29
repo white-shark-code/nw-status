@@ -155,11 +155,14 @@ const char *get_level_icon_color_test(float level) {
     return DEFAULT_LEVEL_ICON_COLOR;
 }
 
-void test_default_icons_when_count_zero(void) {
-    TEST_ASSERT_EQUAL_STRING(DEFAULT_LINK_ICON, get_link_icon(50));
-    TEST_ASSERT_EQUAL_STRING(DEFAULT_LINK_ICON_COLOR, get_link_icon_color(50));
-    TEST_ASSERT_EQUAL_STRING(DEFAULT_LEVEL_ICON, get_level_icon(-50.0f));
-    TEST_ASSERT_EQUAL_STRING(DEFAULT_LEVEL_ICON_COLOR, get_level_icon_color(-50.0f));
+void test_configured_icon_tables(void) {
+    /* default config tables: link 50 -> medium, level -50 -> good */
+    TEST_ASSERT_EQUAL_STRING("󰇨", get_link_icon(50));
+    TEST_ASSERT_EQUAL_STRING("#ffff00", get_link_icon_color(50));
+    TEST_ASSERT_EQUAL_STRING("󰤢", get_level_icon(-50.0f));
+    TEST_ASSERT_EQUAL_STRING("#aaff00", get_level_icon_color(-50.0f));
+    /* unknown interface still falls back to defaults */
+    TEST_ASSERT_EQUAL_STRING(DEFAULT_INTERFACE_ICON, get_interface_icon("nope0"));
 }
 
 void run_signal_tests(void) {
@@ -178,7 +181,7 @@ void run_signal_tests(void) {
     RUN_TEST(test_get_link_icon_color_good);
     RUN_TEST(test_get_link_icon_color_medium);
     RUN_TEST(test_get_link_icon_color_poor);
-    RUN_TEST(test_default_icons_when_count_zero);
+    RUN_TEST(test_configured_icon_tables);
 }
 
 void test_signals(void) {
