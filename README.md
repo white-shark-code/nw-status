@@ -177,12 +177,17 @@ static const level_icon_t level_icons[] = {
 ./build/nw-status --short
 ./build/nw-status -s
 
+# Limit interfaces: connected first (by SSID), then the rest
+./build/nw-status --limit 1
+./build/nw-status -n 2 --short
+
 # Show help
 ./build/nw-status --help
 ./build/nw-status -h
 ```
 
 Short mode prints `<signal icon> <ssid>` per interface (`noname` if the SSID is empty or unavailable).
+`--limit N` keeps at most N interfaces, connected ones (with SSID) first, and applies to all output modes.
 An unknown flag prints an error to stderr and exits with status `1`.
 The default format/style are controlled by `config.h` (`OUTPUT_FORMAT_TERMINAL`, `TERMINAL_STYLE`); `--short` overrides the format selector.
 

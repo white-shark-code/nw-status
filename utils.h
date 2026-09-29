@@ -68,6 +68,7 @@ FILE *read_file(const char *path);
 Wireless get_wire_iface(const char *row);
 VecWirelesses *get_all_wire_ifaces(FILE *file);
 int vec_networks_push(VecNetwork *networks, Network *network);
+int vec_networks_limit(VecNetwork *networks, long limit);
 VecNetwork *prepair_networks_using_wireless(VecWirelesses *wirelesses);
 ssize_t get_index_wire(const char *ifa_name, VecNetwork *networks);
 int get_wireless_ssid(const char *ifname, char *ssid_buf, size_t buf_len);

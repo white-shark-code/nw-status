@@ -412,6 +412,48 @@ void vec_networks_free(VecNetwork *networks) {
   free(networks);
 }
 
+int vec_networks_limit(VecNetwork *networks, long limit) {
+  if (!networks) {
+    return -1;
+  }
+  if (limit < 0) {
+    return 0;
+  }
+  if (networks->size == 0) {
+    return 0;
+  }
+
+  Network *buf = malloc(networks->size * sizeof(Network));
+  if (!buf) {
+    return -1;
+  }
+
+  size_t pos = 0;
+  for (size_t i = 0; i < networks->size; i++) {
+    if (networks->data[i].wire && networks->data[i].wire->ssid[0] != '\0') {
+      buf[pos] = networks->data[i];
+      pos++;
+    }
+  }
+  for (size_t i = 0; i < networks->size; i++) {
+    if (!(networks->data[i].wire && networks->data[i].wire->ssid[0] != '\0')) {
+      buf[pos] = networks->data[i];
+      pos++;
+    }
+  }
+  memcpy(networks->data, buf, networks->size * sizeof(Network));
+  free(buf);
+
+  if ((size_t)limit < networks->size) {
+    for (size_t i = (size_t)limit; i < networks->size; i++) {
+      network_free(&networks->data[i]);
+    }
+    networks->size = (size_t)limit;
+  }
+
+  return 0;
+}
+
 VecNetwork *prepair_networks_using_wireless(VecWirelesses *wirelesses) {
   if (!wirelesses) {
     return NULL;

@@ -1,14 +1,32 @@
 #include "utils.h"
+#include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main(int argc, char *argv[]) {
   int short_mode = 0;
+  long limit = -1;
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--short") == 0 || strcmp(argv[i], "-s") == 0) {
       short_mode = 1;
+    } else if (strcmp(argv[i], "--limit") == 0 || strcmp(argv[i], "-n") == 0) {
+      const char *flag = argv[i];
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Invalid value for %s: missing value\n", flag);
+        return 1;
+      }
+      char *endptr = NULL;
+      long val = strtol(argv[i + 1], &endptr, 10);
+      if (endptr == argv[i + 1] || *endptr != '\0' || val < 1 ||
+          val > INT_MAX) {
+        fprintf(stderr, "Invalid value for %s: %s\n", flag, argv[i + 1]);
+        return 1;
+      }
+      limit = val;
+      i++;
     } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-      printf("Usage: %s [--short|-s] [--help|-h]\n", argv[0]);
+      printf("Usage: %s [--short|-s] [--limit|-n N] [--help|-h]\n", argv[0]);
       return 0;
     } else {
       fprintf(stderr, "Unknown option: %s\n", argv[i]);
@@ -35,6 +53,13 @@ int main(int argc, char *argv[]) {
   }
 
   enrich_networks_with_ssid(ptr_networks);
+
+  if (vec_networks_limit(ptr_networks, limit) == -1) {
+    vec_networks_free(ptr_networks);
+    vec_free_wirelesses(wires);
+    fclose(file);
+    return 1;
+  }
 
   if (get_addr(ptr_networks) == -1) {
     vec_networks_free(ptr_networks);
