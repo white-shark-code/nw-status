@@ -51,8 +51,7 @@ static const link_icon_t link_icons[] = {
 
 /* ===== Signal level icons ===== */
 typedef struct {
-  float
-      threshold;     /* Signal level threshold in dBm. Higher = better.
+  float threshold;   /* Signal level threshold in dBm. Higher = better.
                         Array ordered from best to worst (descending thresholds):
                         first entry with level >= threshold wins. */
   const char *icon;  /* Nerd Font icon */

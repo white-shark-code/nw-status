@@ -455,6 +455,10 @@ ssize_t get_index_wire(const char *ifa_name, VecNetwork *networks) {
 }
 
 int get_addr(VecNetwork *networks) {
+#if !OUTPUT_SHOW_IPV4 && !OUTPUT_SHOW_IPV6
+  (void)networks;
+  return 0;
+#else
   struct ifaddrs *ifaddr, *ifa;
   if (getifaddrs(&ifaddr) == -1) {
     perror("getifaddrs");
@@ -472,9 +476,14 @@ int get_addr(VecNetwork *networks) {
 
     Network *network = &networks->data[network_id];
 
+#if OUTPUT_SHOW_IPV4
     int ipv4_type = AF_INET;
+#endif
+#if OUTPUT_SHOW_IPV6
     int ipv6_type = AF_INET6;
+#endif
 
+#if OUTPUT_SHOW_IPV4
     if (ifa->ifa_addr->sa_family == ipv4_type) {
       struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
       IPv4 ipv4;
@@ -482,7 +491,10 @@ int get_addr(VecNetwork *networks) {
       if (vec_push_addresses_ipv4(network->addresses_ipv4, ipv4) == -1) {
         return -1;
       }
-    } else if (ifa->ifa_addr->sa_family == ipv6_type) {
+    }
+#endif
+#if OUTPUT_SHOW_IPV6
+    if (ifa->ifa_addr->sa_family == ipv6_type) {
       struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)ifa->ifa_addr;
       IPv6 ipv6;
       inet_ntop(AF_INET6, &sa6->sin6_addr, ipv6.address, sizeof ipv6.address);
@@ -503,11 +515,13 @@ int get_addr(VecNetwork *networks) {
         return -1;
       }
     }
+#endif
   }
 
   freeifaddrs(ifaddr);
 
   return 0;
+#endif
 }
 
 /* Shared helpers for field filtering */
